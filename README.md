@@ -56,13 +56,21 @@ Orthanc's own UI is at <http://localhost:8042> (`orthanc` / `orthanc`).
 
 ### Torch
 
-Installed separately, because the CUDA build must match the driver. This box is
-a GTX 1050 Ti — 4 GB, Pascal, no tensor cores. It runs inference; it does not
-run training. See the roadmap.
+Installed separately, and **not the same build on both machines**. The local
+card is a GTX 1050 Ti (Pascal, sm_61); the burst box is an RTX 5090 (Blackwell,
+sm_120, needs PyTorch >= 2.7 on CUDA 12.8). These sit at opposite ends of
+PyTorch's build matrix, so one wheel may not cover both.
+
+Ask the machine rather than guessing — if its compute capability is absent from
+the arch list, CUDA calls fail with `no kernel image is available`:
 
 ```bash
-./.venv/Scripts/python.exe -m pip install torch --index-url https://download.pytorch.org/whl/cu124
+./.venv/Scripts/python.exe -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda.get_arch_list())"
 ```
+
+Local only needs torch for experiments; shipped inference goes through ONNX
+Runtime, which is indifferent to all of the above. Training belongs on the
+burst box. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Known gaps
 
