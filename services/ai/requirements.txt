@@ -1,0 +1,22 @@
+# Pinned loosely for now; tighten once P3 has the service under test.
+
+# DICOM and volume handling
+pydicom>=3.0
+pynetdicom>=2.1
+SimpleITK>=2.4
+nibabel>=5.3
+highdicom>=0.23        # writing DICOM SEG back out (P2)
+
+# Numerics
+numpy>=2.0
+scipy>=1.14
+
+# Service
+fastapi>=0.115
+uvicorn[standard]>=0.32
+httpx>=0.28
+pydantic>=2.9
+
+# ML — torch is installed separately, see README (CUDA build must match driver)
+monai>=1.4
+onnxruntime>=1.20

@@ -1,0 +1,28 @@
+# Data never enters the repo — licences vary and volumes are large.
+data/
+*.dcm
+*.nii
+*.nii.gz
+*.nrrd
+
+# Model weights and derived indices are rebuildable artefacts.
+weights/
+*.onnx
+*.pth
+*.ckpt
+*.idx
+
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+node_modules/
+dist/
+build/
+
+orthanc-db/
+
+.env
+.DS_Store

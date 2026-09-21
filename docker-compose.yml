@@ -1,0 +1,27 @@
+# Local PACS. Nothing here is exposed beyond localhost: bind addresses are
+# explicit so a stray firewall rule cannot publish patient data by accident.
+services:
+  orthanc:
+    image: orthancteam/orthanc:25.6.2
+    container_name: radviewer-orthanc
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8042:8042"   # HTTP / REST / DICOMweb
+      - "127.0.0.1:4242:4242"   # DICOM protocol, for C-STORE from tooling
+    volumes:
+      - ./orthanc-db:/var/lib/orthanc/db
+    environment:
+      ORTHANC__NAME: radviewer
+      ORTHANC__DICOM_WEB__ENABLE: "true"
+      ORTHANC__DICOM_WEB__ROOT: /dicom-web/
+      # OHIF fetches from a different origin during development.
+      ORTHANC__HTTP_CORS__ENABLE: "true"
+      ORTHANC__HTTP_CORS__ALLOWED_ORIGIN: "*"
+      # Local-only research instance. Change before this is ever reachable
+      # from another machine.
+      ORTHANC__AUTHENTICATION_ENABLED: "true"
+      ORTHANC__REGISTERED_USERS: |
+        {"orthanc": "orthanc"}
+      # Studies arrive from many sources with inconsistent transfer syntaxes.
+      ORTHANC__UNKNOWN_SOP_CLASS_ACCEPTED: "true"
+      ORTHANC__STABLE_AGE: "10"
