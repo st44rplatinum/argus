@@ -11,7 +11,9 @@ Run it after cloning OHIF, and again whenever the config changes.
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -25,21 +27,37 @@ COPIES = [
 ]
 
 
-def write_npmrc(checkout: Path) -> Path:
-    """Keep pnpm's store on the same volume as node_modules.
+def check_store_volume(checkout: Path) -> str:
+    """Warn if pnpm's store is on a different volume from the checkout.
 
     pnpm hardlinks packages out of its store. Across volumes it cannot, and
-    falls back to copying every file of every package — which on a spinning
-    disk turned a install into twenty minutes of pure I/O.
+    copies every file of every package instead — on this machine's spinning
+    disk that was twenty minutes of pure I/O for one install.
 
-    The path is derived from where the checkout actually resolves rather than
-    hardcoded, so this stays correct if the checkout moves again or is a
-    junction to another drive.
+    pnpm already picks a store on the project's own drive, so this asserts the
+    property rather than trying to set it. An earlier version of this script
+    wrote store-dir into .npmrc; pnpm ignored it, and the config quietly did
+    nothing while appearing to work.
     """
-    store = checkout.resolve().parent / "pnpm-store"
-    npmrc = checkout / ".npmrc"
-    npmrc.write_text(f"store-dir={store}\n")
-    return npmrc
+    try:
+        result = subprocess.run(
+            ["corepack", "pnpm@11.5.2", "store", "path"],
+            cwd=checkout,
+            capture_output=True,
+            text=True,
+            shell=os.name == "nt",
+            timeout=120,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return "store: could not ask pnpm (corepack missing or slow)"
+
+    store = result.stdout.strip().splitlines()[-1] if result.stdout.strip() else ""
+    if not store:
+        return "store: pnpm did not report a path"
+
+    same = Path(store).drive.upper() == checkout.resolve().drive.upper()
+    verdict = "same volume, hardlinks work" if same else "DIFFERENT VOLUME — installs will copy, not link"
+    return f"store: {store} ({verdict})"
 
 
 def main() -> None:
@@ -65,8 +83,7 @@ def main() -> None:
         shutil.copy2(source, destination)
         print(f"{source.relative_to(REPO)} -> {destination.relative_to(args.checkout)}")
 
-    npmrc = write_npmrc(args.checkout)
-    print(f"{npmrc.name} -> store-dir={npmrc.read_text().strip().split('=', 1)[1]}")
+    print(check_store_volume(args.checkout))
 
 
 if __name__ == "__main__":
