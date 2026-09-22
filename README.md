@@ -122,6 +122,25 @@ Local only needs torch for experiments; shipped inference goes through ONNX
 Runtime, which is indifferent to all of the above. Training belongs on the
 burst box. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## Notebooks
+
+Jupyter is installed against the Microsoft Store Python, whose script directory
+is not on PATH by default. It has been added; **a new terminal is needed** for
+that to take effect, since existing shells hold the old PATH.
+
+```bash
+jupyter lab
+```
+
+That Jupyter is global and cannot see this project's venv, so a kernel is
+registered for it. **Pick "radiology viewer (.venv)"** in the kernel menu — the
+default Python kernel has no pydicom, no MONAI and no access to
+`services/ai/app`.
+
+A `radviewer.pth` in the venv's site-packages puts `services/ai` on the path,
+so `from app.dicomweb import load_series` works from any working directory
+rather than only from inside that folder.
+
 ## Known gaps
 
 - P0 only. No viewer, no models, no service yet.
