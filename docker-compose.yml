@@ -14,14 +14,19 @@ services:
       ORTHANC__NAME: radviewer
       ORTHANC__DICOM_WEB__ENABLE: "true"
       ORTHANC__DICOM_WEB__ROOT: /dicom-web/
-      # OHIF fetches from a different origin during development.
-      ORTHANC__HTTP_CORS__ENABLE: "true"
-      ORTHANC__HTTP_CORS__ALLOWED_ORIGIN: "*"
-      # Local-only research instance. Change before this is ever reachable
-      # from another machine.
-      ORTHANC__AUTHENTICATION_ENABLED: "true"
-      ORTHANC__REGISTERED_USERS: |
-        {"orthanc": "orthanc"}
+      # No CORS, deliberately. The browser never talks to Orthanc: OHIF's dev
+      # server proxies /pacs/dicom-web to it, so everything is same-origin.
+      #
+      # This matters. An earlier version of this file allowed origin "*" with
+      # authentication off, which would let any page the user happens to visit
+      # read studies out of this container. The proxy removes the need for
+      # CORS, so the wildcard goes rather than being narrowed.
+      #
+      # Authentication stays off because the 127.0.0.1 bind above is the
+      # property that makes this safe, and a password would have to live in
+      # the proxy config to be useful. Re-enable both together if the bind
+      # ever changes.
+      ORTHANC__AUTHENTICATION_ENABLED: "false"
       # Studies arrive from many sources with inconsistent transfer syntaxes.
       ORTHANC__UNKNOWN_SOP_CLASS_ACCEPTED: "true"
       ORTHANC__STABLE_AGE: "10"

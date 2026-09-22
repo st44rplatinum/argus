@@ -52,7 +52,43 @@ will both talk to.
 ./.venv/Scripts/python.exe scripts/check_dicomweb.py
 ```
 
-Orthanc's own UI is at <http://localhost:8042> (`orthanc` / `orthanc`).
+Orthanc's own UI is at <http://localhost:8042>.
+
+It runs with authentication off and CORS off, bound to `127.0.0.1` only. That
+bind is the whole security property — the browser never reaches Orthanc
+directly, because the viewer proxies to it. If you ever unbind it from
+localhost, put authentication back in the same change.
+
+## P1 — the viewer
+
+OHIF is a build dependency, pinned to a release tag and gitignored. Our code is
+`viewer/config` and (later) our extension and mode — the same split as eov and
+eov-similarity-plugin.
+
+```bash
+git clone --depth 1 --branch v3.13.10 https://github.com/OHIF/Viewers.git viewer/Viewers
+```
+
+Needs Node >= 24 and pnpm >= 11. Corepack can run the pinned pnpm without a
+global install — `corepack enable` wants write access to the Node install
+directory and is not necessary.
+
+```bash
+cd viewer/Viewers && corepack pnpm@11.5.2 install
+```
+
+Copy our config into the checkout, then start it. The dev server proxies
+`/pacs/dicom-web` to Orthanc, which is why no CORS is needed anywhere.
+
+```bash
+./.venv/Scripts/python.exe scripts/link_viewer.py
+```
+
+```bash
+./.venv/Scripts/python.exe scripts/dev_viewer.py
+```
+
+Viewer at <http://localhost:3000>.
 
 ### Torch
 

@@ -26,3 +26,10 @@ orthanc-db/
 
 .env
 .DS_Store
+
+# OHIF checkout — a build dependency, not our code. Our extension and mode
+# live in viewer/extensions and viewer/modes.
+viewer/Viewers/
+
+# Generated pnpm shim — see scripts/dev_viewer.py
+.tooling/
