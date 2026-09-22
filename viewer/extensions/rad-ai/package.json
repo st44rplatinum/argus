@@ -1,0 +1,32 @@
+{
+  "name": "@radviewer/extension-rad-ai",
+  "version": "0.1.0",
+  "description": "AI panels and commands for the radiology viewer",
+  "license": "MIT",
+  "main": "dist/radviewer-extension-rad-ai.umd.js",
+  "module": "src/index.tsx",
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "clean": "shx rm -rf dist",
+    "dev": "cross-env NODE_ENV=development rspack build --config .webpack/webpack.dev.js --watch",
+    "build": "cross-env NODE_ENV=production rspack build --config .webpack/webpack.prod.js",
+    "start": "pnpm run dev"
+  },
+  "peerDependencies": {
+    "@ohif/core": "workspace:*",
+    "@ohif/ui-next": "workspace:*",
+    "react": "18.3.1"
+  },
+  "dependencies": {
+    "@babel/runtime": "7.29.7"
+  },
+  "devDependencies": {
+    "cross-env": "7.0.3"
+  }
+}
