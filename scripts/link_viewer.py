@@ -25,6 +25,23 @@ COPIES = [
 ]
 
 
+def write_npmrc(checkout: Path) -> Path:
+    """Keep pnpm's store on the same volume as node_modules.
+
+    pnpm hardlinks packages out of its store. Across volumes it cannot, and
+    falls back to copying every file of every package — which on a spinning
+    disk turned a install into twenty minutes of pure I/O.
+
+    The path is derived from where the checkout actually resolves rather than
+    hardcoded, so this stays correct if the checkout moves again or is a
+    junction to another drive.
+    """
+    store = checkout.resolve().parent / "pnpm-store"
+    npmrc = checkout / ".npmrc"
+    npmrc.write_text(f"store-dir={store}\n")
+    return npmrc
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -47,6 +64,9 @@ def main() -> None:
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, destination)
         print(f"{source.relative_to(REPO)} -> {destination.relative_to(args.checkout)}")
+
+    npmrc = write_npmrc(args.checkout)
+    print(f"{npmrc.name} -> store-dir={npmrc.read_text().strip().split('=', 1)[1]}")
 
 
 if __name__ == "__main__":

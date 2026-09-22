@@ -65,6 +65,18 @@ OHIF is a build dependency, pinned to a release tag and gitignored. Our code is
 `viewer/config` and (later) our extension and mode — the same split as eov and
 eov-similarity-plugin.
 
+**The checkout lives on the SSD, not next to the repo.** `E:` is a 2009 SATA II
+spinning disk; installing there took twenty minutes in pnpm's linking phase
+alone, and the first bundle another ten. `viewer/Viewers` is a junction to
+`C:\radviewer\Viewers` so the ~200k small files land on flash. The repo, and
+`data/`, stay on `E:` where sequential reads of large volumes are fine.
+
+```bash
+New-Item -ItemType Junction -Path "viewer\Viewers" -Target "C:\radviewer\Viewers"
+```
+
+Junctions need no elevation, unlike symlinks.
+
 ```bash
 git clone --depth 1 --branch v3.13.10 https://github.com/OHIF/Viewers.git viewer/Viewers
 ```
@@ -77,8 +89,10 @@ directory and is not necessary.
 cd viewer/Viewers && corepack pnpm@11.5.2 install
 ```
 
-Copy our config into the checkout, then start it. The dev server proxies
-`/pacs/dicom-web` to Orthanc, which is why no CORS is needed anywhere.
+Copy our config into the checkout, then start it. `link_viewer.py` also writes
+an `.npmrc` pinning pnpm's store next to the checkout — across volumes pnpm
+cannot hardlink and copies every file of every package instead, which is what
+made the first install so slow.
 
 ```bash
 ./.venv/Scripts/python.exe scripts/link_viewer.py
