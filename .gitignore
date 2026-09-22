@@ -33,3 +33,5 @@ viewer/Viewers/
 
 # Generated pnpm shim — see scripts/dev_viewer.py
 .tooling/
+
+.pytest_cache/
