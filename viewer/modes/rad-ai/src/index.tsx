@@ -2,8 +2,13 @@ import {
   ohif,
   cornerstone,
   extensionDependencies as basicExtensionDependencies,
+  initToolGroups,
+  isValidMode,
   layoutTemplate,
   modeFactory,
+  onModeEnter,
+  onModeExit,
+  NON_IMAGE_MODALITIES,
 } from '@ohif/mode-basic';
 
 import { id } from './id';
@@ -69,6 +74,47 @@ const modeInstance = {
 
   // Nothing is displayable unless its handler is listed here as well.
   sopClassHandlers: [ohif.sopClassHandler],
+
+  // Toolbar and tool-group composition. onModeEnter reads these back off the
+  // customization service, so omitting them leaves the toolbar empty.
+  toolbarButtons: [{ $reference: 'cornerstone.toolbarButtons' }],
+  toolbarSections: [{ $reference: 'cornerstone.toolbarSections' }],
+  toolGroupAdditions: {
+    default: [],
+    mpr: [],
+    volume3d: [],
+  },
+
+  // Read as `this.initToolGroups` inside onModeEnter — an instance property
+  // precisely so a mode can substitute its own. Ours is basic's.
+  initToolGroups,
+
+  // Registered below and applied by the mode route as the bottom layer of the
+  // mode scope. Empty, but it has to exist for customizations to target it.
+  modeCustomizations: 'argusModeCustomizations',
+
+  // onModeEnter reads `this.activatePanelTriggers`; undefined throws.
+  activatePanelTriggers: [],
+
+  /**
+   * Lifecycle hooks. Omitting these is what produced
+   * "mode?.onModeEnter is not a function" — the router calls them
+   * unconditionally, so they are required rather than optional.
+   */
+  onModeEnter,
+  onModeExit,
+
+  validationTags: {
+    study: [],
+    series: [],
+  },
+
+  isValidMode,
+  nonModeModalities: NON_IMAGE_MODALITIES,
+};
+
+export const customizations = {
+  argusModeCustomizations: {},
 };
 
 export default {
@@ -76,4 +122,5 @@ export default {
   modeFactory,
   modeInstance,
   extensionDependencies,
+  customizations,
 };
