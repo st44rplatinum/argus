@@ -59,7 +59,13 @@ def main() -> None:
         base_url=args.url, auth=(args.user, args.password), timeout=30.0
     ) as client:
         try:
-            studies = client.get("/studies", params={"limit": 50})
+            # QIDO returns a fixed default set per level; anything outside it
+            # comes back missing rather than empty, which reads as a data bug
+            # when it is a query bug. Ask for what we print.
+            studies = client.get(
+                "/studies",
+                params={"limit": 50, "includefield": "StudyDescription"},
+            )
         except httpx.ConnectError:
             raise SystemExit(
                 f"cannot reach {args.url} — is `docker compose up -d` running?"
