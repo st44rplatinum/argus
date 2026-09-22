@@ -1,9 +1,9 @@
 {
-  "name": "@radviewer/extension-rad-ai",
+  "name": "@argus/extension-rad-ai",
   "version": "0.1.0",
   "description": "AI panels and commands for the radiology viewer",
   "license": "MIT",
-  "main": "dist/radviewer-extension-rad-ai.umd.js",
+  "main": "dist/argus-extension-rad-ai.umd.js",
   "module": "src/index.tsx",
   "engines": {
     "node": ">=24"

@@ -11,6 +11,7 @@ Run it after cloning OHIF, and again whenever the config changes.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -25,6 +26,83 @@ COPIES = [
     (REPO / "viewer" / "config" / "radviewer.js",
      CHECKOUT / "platform" / "app" / "public" / "config" / "radviewer.js"),
 ]
+
+# Our packages have to sit inside the checkout to resolve `workspace:*` peer
+# deps — OHIF's pnpm workspace globs are `extensions/*` and `modes/*`. Source
+# still lives here; these are copies into disposable territory.
+PACKAGE_TREES = [
+    (REPO / "viewer" / "extensions", "extensions"),
+    (REPO / "viewer" / "modes", "modes"),
+]
+
+# Build output and dependencies belong to the checkout, not to us.
+IGNORE = shutil.ignore_patterns("node_modules", "dist", "*.tsbuildinfo")
+
+
+def sync_packages(checkout: Path) -> list[str]:
+    """Copy our extension and mode packages into the checkout."""
+    done = []
+
+    for source_root, destination_name in PACKAGE_TREES:
+        if not source_root.is_dir():
+            continue
+
+        for package in sorted(p for p in source_root.iterdir() if p.is_dir()):
+            destination = checkout / destination_name / package.name
+            shutil.copytree(package, destination, dirs_exist_ok=True, ignore=IGNORE)
+            done.append(f"{destination_name}/{package.name}")
+
+    return done
+
+
+def package_names() -> tuple[list[str], list[str]]:
+    """Read the package names out of our manifests, rather than hardcoding."""
+    extensions, modes = [], []
+
+    for source_root, kind in PACKAGE_TREES:
+        if not source_root.is_dir():
+            continue
+
+        for package in sorted(p for p in source_root.iterdir() if p.is_dir()):
+            manifest = package / "package.json"
+            if not manifest.is_file():
+                continue
+            name = json.loads(manifest.read_text()).get("name")
+            if name:
+                (extensions if kind == "extensions" else modes).append(name)
+
+    return extensions, modes
+
+
+def register_plugins(checkout: Path) -> str:
+    """Add our packages to OHIF's pluginConfig.json, without disturbing theirs.
+
+    Idempotent, and a merge rather than a replacement: OHIF's own entries
+    change between releases, so shipping a whole replacement file would mean
+    silently pinning their list to whatever it looked like the day we copied
+    it.
+    """
+    config_path = checkout / "platform" / "app" / "pluginConfig.json"
+    if not config_path.is_file():
+        return f"no pluginConfig.json at {config_path}"
+
+    config = json.loads(config_path.read_text())
+    extensions, modes = package_names()
+
+    added = []
+    for key, names in (("extensions", extensions), ("modes", modes)):
+        entries = config.setdefault(key, [])
+        present = {entry.get("packageName") for entry in entries}
+        for name in names:
+            if name not in present:
+                entries.append({"packageName": name})
+                added.append(name)
+
+    if added:
+        config_path.write_text(json.dumps(config, indent=2) + "\n")
+        return "registered " + ", ".join(added)
+
+    return "already registered"
 
 
 def check_store_volume(checkout: Path) -> str:
@@ -83,6 +161,10 @@ def main() -> None:
         shutil.copy2(source, destination)
         print(f"{source.relative_to(REPO)} -> {destination.relative_to(args.checkout)}")
 
+    for name in sync_packages(args.checkout):
+        print(f"viewer/{name} -> {name}")
+
+    print(register_plugins(args.checkout))
     print(check_store_volume(args.checkout))
 
 

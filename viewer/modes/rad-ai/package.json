@@ -1,0 +1,17 @@
+{
+  "name": "@argus/mode-rad-ai",
+  "version": "0.1.0",
+  "description": "Radiology viewing with the AI panels attached",
+  "license": "MIT",
+  "main": "dist/argus-mode-rad-ai.umd.js",
+  "module": "src/index.tsx",
+  "engines": {
+    "node": ">=24"
+  },
+  "peerDependencies": {
+    "@ohif/core": "workspace:*",
+    "@ohif/mode-basic": "workspace:*",
+    "@argus/extension-rad-ai": "workspace:*",
+    "react": "18.3.1"
+  }
+}
