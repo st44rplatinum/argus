@@ -13,6 +13,7 @@ from dicomweb_client.api import DICOMwebClient
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
+from .dicom_seg import build_segmentation, store_segmentation
 from .dicomweb import client_for, load_series
 from .segment import calculate_bounding_box, threshold_segment
 
@@ -39,16 +40,14 @@ class SegmentRequest(BaseModel):
     low: float = Field(default=300)
     high: float = Field(default=3000)
 
+    store: bool = False
+
 
 @app.post("/segment")
 def segment(request: SegmentRequest):
     try:
         volume = load_series(client(), request.study_uid, request.series_uid)
     except ValueError as exc:
-        # assemble() raises ValueError for a series that exists but is not a
-        # coherent volume — duplicate positions, irregular spacing. That is
-        # not "not found", and returning 404 for it sends you hunting for a
-        # missing series that is sitting right there.
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(
@@ -58,7 +57,7 @@ def segment(request: SegmentRequest):
     mask = threshold_segment(volume, request.low, request.high)
     box = calculate_bounding_box(mask)
 
-    return {
+    result = {
         "study_uid": request.study_uid,
         "series_uid": request.series_uid,
         "shape": list(volume.shape),
@@ -66,7 +65,32 @@ def segment(request: SegmentRequest):
         "voxel_count": int(mask.sum()),
         # Inclusive indices, so a width is max - min + 1.
         "bounding_box": box,
+        "seg_series_uid": None,
     }
+
+    if not request.store:
+        return result
+
+    if box is None:
+        # highdicom will not build a segmentation with no segmented voxels,
+        # and storing an empty one would be a lie anyway.
+        raise HTTPException(
+            status_code=422,
+            detail=f"No voxels in [{request.low}, {request.high}] HU to store",
+        )
+
+    # load_series fetches these and throws them away. Refetching is a wasted
+    # round trip; it is not worth complicating that function's return for
+    # until something measures it.
+    sources = client().retrieve_series(
+        study_instance_uid=request.study_uid,
+        series_instance_uid=request.series_uid,
+    )
+
+    segmentation = build_segmentation(sources, mask, volume.sop_uids)
+    result["seg_series_uid"] = store_segmentation(client(), segmentation)
+
+    return result
 
 
 @app.get("/health")
