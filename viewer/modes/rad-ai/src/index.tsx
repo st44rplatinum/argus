@@ -1,6 +1,7 @@
 import {
   ohif,
   cornerstone,
+  dicomSeg,
   extensionDependencies as basicExtensionDependencies,
   initToolGroups,
   isValidMode,
@@ -51,7 +52,7 @@ const modeInstance = {
           leftPanels: [ohif.thumbnailList],
           leftPanelResizable: true,
 
-          rightPanels: [seriesInfoPanel],
+          rightPanels: [seriesInfoPanel, cornerstone.labelMapSegmentationPanel],
           rightPanelResizable: true,
 
           viewports: [
@@ -64,6 +65,10 @@ const modeInstance = {
               // it show them" — viewport type comes from the hanging protocol.
               displaySetsToDisplay: [ohif.sopClassHandler],
             },
+            {
+              namespace: dicomSeg.viewport,
+              displaySetsToDisplay: [dicomSeg.sopClassHandler],
+            },
           ],
         },
       },
@@ -73,7 +78,7 @@ const modeInstance = {
   extensions: extensionDependencies,
 
   // Nothing is displayable unless its handler is listed here as well.
-  sopClassHandlers: [ohif.sopClassHandler],
+  sopClassHandlers: [ohif.sopClassHandler, dicomSeg.sopClassHandler],
 
   // Toolbar and tool-group composition. onModeEnter reads these back off the
   // customization service, so omitting them leaves the toolbar empty.
