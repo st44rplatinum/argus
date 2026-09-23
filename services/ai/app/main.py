@@ -1,27 +1,42 @@
 """The AI service.
 
-One endpoint for now. It exists to prove the plumbing — fetch a series over
-DICOMweb, run something over it, report a number you can check by hand —
-before any model is involved.
+A synchronous /segment for checking the service is sane, and a job queue for
+work that takes minutes — which is everything once a real model is involved.
 """
 
 from __future__ import annotations
 
-import os
+from contextlib import asynccontextmanager
 
 from dicomweb_client.api import DICOMwebClient
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
+from . import db, jobs, worker
+from .cache import make_cache_key
+from .config import (
+    ARGUS_DEVICE,
+    ARGUS_THREADS,
+    DICOMWEB_URL,
+    MODEL_NAME,
+    MODEL_VERSION,
+)
 from .dicom_seg import build_segmentation, store_segmentation
 from .dicomweb import client_for, load_series
 from .segment import calculate_bounding_box, threshold_segment
 
-app = FastAPI(title="Argus")
 
-# One client for the process rather than one per request: it holds a session,
-# and rebuilding it per call throws away connection reuse.
-DICOMWEB_URL = os.environ.get("ARGUS_DICOMWEB", "http://localhost:8042/dicom-web")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    db.init_db()
+    # Anything left running or queued died with the last process.
+    db.mark_interrupted_jobs_failed()
+    worker.start()
+    yield
+
+
+app = FastAPI(title="Argus", lifespan=lifespan)
+
 _client: DICOMwebClient | None = None
 
 
@@ -43,11 +58,24 @@ class SegmentRequest(BaseModel):
     store: bool = False
 
 
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "dicomweb": DICOMWEB_URL,
+        "device": ARGUS_DEVICE,
+        "threads": ARGUS_THREADS,
+        "model": f"{MODEL_NAME}@{MODEL_VERSION}",
+    }
+
+
 @app.post("/segment")
 def segment(request: SegmentRequest):
+    """Synchronous. Fine for a threshold, useless for anything slower."""
     try:
         volume = load_series(client(), request.study_uid, request.series_uid)
     except ValueError as exc:
+        # A series that exists but is not a coherent volume. Not "not found".
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(
@@ -72,27 +100,63 @@ def segment(request: SegmentRequest):
         return result
 
     if box is None:
-        # highdicom will not build a segmentation with no segmented voxels,
-        # and storing an empty one would be a lie anyway.
         raise HTTPException(
             status_code=422,
             detail=f"No voxels in [{request.low}, {request.high}] HU to store",
         )
 
-    # load_series fetches these and throws them away. Refetching is a wasted
-    # round trip; it is not worth complicating that function's return for
-    # until something measures it.
     sources = client().retrieve_series(
         study_instance_uid=request.study_uid,
         series_instance_uid=request.series_uid,
     )
-
     segmentation = build_segmentation(sources, mask, volume.sop_uids)
     result["seg_series_uid"] = store_segmentation(client(), segmentation)
 
     return result
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok", "dicomweb": DICOMWEB_URL}
+@app.post("/jobs")
+def create_job(request: SegmentRequest):
+    # The parameters belong in the key. Threshold 300-3000 and 400-3000 are
+    # different answers for the same series and the same model.
+    cache_key = make_cache_key(
+        request.series_uid,
+        MODEL_NAME,
+        MODEL_VERSION,
+        {"low": request.low, "high": request.high, "store": request.store},
+    )
+
+    cached = db.find_cached_result(cache_key)
+    if cached is not None:
+        return {**cached, "cached": True}
+
+    payload = request.model_dump()
+    payload["cache_key"] = cache_key
+    payload["dicomweb_url"] = DICOMWEB_URL
+
+    return {**jobs.submit_job(payload), "cached": False}
+
+
+@app.get("/jobs")
+def list_jobs():
+    return jobs.list_jobs()
+
+
+@app.get("/jobs/{job_id}")
+def read_job(job_id: str):
+    job = jobs.get_job(job_id)
+
+    if job is None:
+        raise HTTPException(status_code=404, detail="No such job")
+
+    return job
+
+
+@app.post("/jobs/{job_id}/cancel")
+def cancel_job(job_id: str):
+    job = jobs.cancel_job(job_id)
+
+    if job is None:
+        raise HTTPException(status_code=404, detail="No such job")
+
+    return job
