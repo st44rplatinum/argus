@@ -72,6 +72,11 @@ class SegmentRequest(BaseModel):
 
     store: bool = False
 
+    # "threshold" is a second and needs nothing; "totalsegmentator" is minutes
+    # on CPU and downloads weights on first use.
+    model: str = "threshold"
+    fast: bool = True
+
 
 @app.get("/health")
 def health():
@@ -134,11 +139,17 @@ def segment(request: SegmentRequest):
 def create_job(request: SegmentRequest):
     # The parameters belong in the key. Threshold 300-3000 and 400-3000 are
     # different answers for the same series and the same model.
+    parameters = {"store": request.store}
+    if request.model == "totalsegmentator":
+        parameters["fast"] = request.fast
+    else:
+        parameters.update({"low": request.low, "high": request.high})
+
     cache_key = make_cache_key(
         request.series_uid,
-        MODEL_NAME,
+        request.model,
         MODEL_VERSION,
-        {"low": request.low, "high": request.high, "store": request.store},
+        parameters,
     )
 
     cached = db.find_cached_result(cache_key)
