@@ -96,3 +96,29 @@ def test_standardising_stops_one_feature_dominating():
 
 def test_k_caps_the_result_count(index):
     assert len(search(index, index.raw[0], k=2)) == 2
+
+
+def test_fused_cosine_is_the_weighted_blend():
+    from app.retrieval import fuse
+
+    rng = np.random.default_rng(0)
+    a = rng.normal(size=(5, 3)); a /= np.linalg.norm(a, axis=1, keepdims=True)
+    b = rng.normal(size=(5, 8)); b /= np.linalg.norm(b, axis=1, keepdims=True)
+
+    f = fuse(a, b, 0.3)
+
+    assert np.allclose(np.linalg.norm(f, axis=1), 1.0)
+    assert np.allclose(f @ f.T, 0.3 * (a @ a.T) + 0.7 * (b @ b.T))
+
+
+def test_bunched_cosines_get_more_weight():
+    from app.retrieval import equal_influence_weight
+
+    rng = np.random.default_rng(1)
+    spread = rng.normal(size=(40, 4)); spread /= np.linalg.norm(spread, axis=1, keepdims=True)
+    # all rows close to one direction, so their cosines barely vary
+    bunched = np.ones((40, 4)) + 0.05 * rng.normal(size=(40, 4))
+    bunched /= np.linalg.norm(bunched, axis=1, keepdims=True)
+
+    # weight is the first set's share; the spread-out set should get the smaller share
+    assert equal_influence_weight(spread, bunched) < 0.5

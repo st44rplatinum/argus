@@ -45,6 +45,25 @@ def standardise(raw: np.ndarray, mean: np.ndarray, std: np.ndarray) -> np.ndarra
     return np.divide(z, norms, out=np.zeros_like(z), where=norms > 0)
 
 
+def fuse(a: np.ndarray, b: np.ndarray, weight: float = 0.5) -> np.ndarray:
+    """Join two sets of unit vectors so cosine = weight*cos_a + (1-weight)*cos_b."""
+    if not 0.0 <= weight <= 1.0:
+        raise ValueError("weight must be in [0, 1]")
+    return np.hstack([np.sqrt(weight) * a, np.sqrt(1.0 - weight) * b])
+
+
+def equal_influence_weight(a: np.ndarray, b: np.ndarray) -> float:
+    """Fusion weight giving both sets the same pull on rankings.
+
+    A bare 0.5 is not equal: a set whose cosines bunch together (DINOv2, sd
+    ~0.1) moves rankings far less per unit weight than one that spreads out.
+    """
+    off = ~np.eye(len(a), dtype=bool)
+    spread_a = (a @ a.T)[off].std()
+    spread_b = (b @ b.T)[off].std()
+    return float(spread_b / (spread_a + spread_b))
+
+
 def load_index(path: Path = DEFAULT_INDEX) -> Index:
     data = np.load(path, allow_pickle=False)
     raw = data["features"].astype(np.float64)
