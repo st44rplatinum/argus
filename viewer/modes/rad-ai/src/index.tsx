@@ -25,6 +25,7 @@ const extensionDependencies = {
 // Panel ids are <packageName>.panelModule.<name>, where <name> comes from the
 // object returned by the extension's getPanelModule.
 const seriesInfoPanel = '@argus/extension-rad-ai.panelModule.seriesInfo';
+const jobsPanel = '@argus/extension-rad-ai.panelModule.jobs';
 
 const modeInstance = {
   id,
@@ -52,7 +53,7 @@ const modeInstance = {
           leftPanels: [ohif.thumbnailList],
           leftPanelResizable: true,
 
-          rightPanels: [seriesInfoPanel, cornerstone.labelMapSegmentationPanel],
+          rightPanels: [jobsPanel, seriesInfoPanel, cornerstone.labelMapSegmentationPanel],
           rightPanelResizable: true,
 
           viewports: [

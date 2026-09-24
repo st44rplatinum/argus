@@ -1,5 +1,6 @@
 import React from 'react';
 
+import JobsPanel from './panels/JobsPanel';
 import SeriesInfoPanel from './panels/SeriesInfoPanel';
 
 export default function getPanelModule({ servicesManager }: withAppTypes) {
@@ -7,9 +8,16 @@ export default function getPanelModule({ servicesManager }: withAppTypes) {
     {
       name: 'seriesInfo',
       iconName: 'tab-studies',
-      iconLabel: 'AI',
+      iconLabel: 'Series',
       label: 'Series',
       component: () => <SeriesInfoPanel servicesManager={servicesManager} />,
+    },
+    {
+      name: 'jobs',
+      iconName: 'icon-transferring',
+      iconLabel: 'AI',
+      label: 'AI',
+      component: () => <JobsPanel servicesManager={servicesManager} />,
     },
   ];
 }

@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 
 from dicomweb_client.api import DICOMwebClient
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import db, jobs, worker
@@ -36,6 +37,20 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Argus", lifespan=lifespan)
+
+# Named origins, never a wildcard. OHIF's dev server proxies DICOMweb for us,
+# but its proxy config is a single env-driven rule that replaces the list
+# rather than appending, so the panel cannot reach this service the same way.
+#
+# This is not the mistake the Orthanc config made: that was "*" on an
+# unauthenticated PACS, which let any page the user visited read studies. An
+# allowlist of one localhost origin does not.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 
 _client: DICOMwebClient | None = None
 
