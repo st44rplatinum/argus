@@ -37,3 +37,7 @@ viewer/Viewers/
 .pytest_cache/
 
 jobs.sqlite3
+
+# Dataset downloads and their logs
+data/raw/*.zip
+data/raw/download.log
