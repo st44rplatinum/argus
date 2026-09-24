@@ -14,6 +14,8 @@ import io
 import highdicom as hd
 import numpy as np
 from pydicom.sr.codedict import codes
+
+from . import anatomy
 from pydicom.uid import generate_uid
 
 # 900 keeps derived series out of the way of acquired ones in a series list.
@@ -162,6 +164,95 @@ def store_segmentation(client, segmentation) -> str:
         )
 
     return str(segmentation.SeriesInstanceUID)
+
+
+def build_multi_segmentation(
+    source_datasets,
+    labelmap,
+    sop_uids,
+    names,
+    *,
+    algorithm_name: str = "TotalSegmentator",
+    software_version: str = "0.1.0",
+):
+    """A SEG holding every structure a label map contains.
+
+    `labelmap` is a 3D array whose values are the model's own label numbers,
+    and `names` maps those numbers to structure names.
+
+    Two things happen here that the single-segment path does not need:
+
+    Labels are renumbered to 1..N over the structures actually *present*.
+    highdicom requires consecutive segment numbers, and a model that can emit
+    117 structures will emit a handful on any given scan — describing the
+    other 110 would fill the viewer's segment list with empty rows.
+
+    The type is LABELMAP rather than BINARY. A stacked-segments array would be
+    one binary mask per structure, so a 191-slice scan with 30 structures
+    becomes 30 times the frames; a label map stays one value per voxel. It is
+    only valid because the segments are mutually exclusive, which they are —
+    a voxel is liver or spleen, not both.
+    """
+    if labelmap.ndim != 3:
+        raise ValueError(f"Expected a 3D label map, got {labelmap.shape}")
+
+    if len(sop_uids) != labelmap.shape[0]:
+        raise ValueError(
+            "Number of source instances does not match label map depth: "
+            f"{len(sop_uids)} != {labelmap.shape[0]}"
+        )
+
+    present = [int(v) for v in np.unique(labelmap) if v != 0]
+    if not present:
+        raise ValueError("label map is empty")
+
+    renumbered = np.zeros(labelmap.shape, dtype=np.uint8)
+    descriptions = []
+
+    for segment_number, original in enumerate(present, start=1):
+        renumbered[labelmap == original] = segment_number
+        name = names.get(original, f"structure {original}")
+
+        descriptions.append(
+            hd.seg.SegmentDescription(
+                segment_number=segment_number,
+                segment_label=anatomy.label_for(name),
+                segmented_property_category=codes.SCT.AnatomicalStructure,
+                segmented_property_type=anatomy.concept_for(name),
+                algorithm_type=hd.seg.SegmentAlgorithmTypeValues.AUTOMATIC,
+                algorithm_identification=hd.AlgorithmIdentificationSequence(
+                    name=algorithm_name,
+                    family=codes.cid7162.ArtificialIntelligence,
+                    version=software_version,
+                ),
+            )
+        )
+
+    by_uid = {str(dataset.SOPInstanceUID): dataset for dataset in source_datasets}
+    missing = [uid for uid in sop_uids if uid not in by_uid]
+    if missing:
+        raise ValueError(
+            f"{len(missing)} slice(s) named in sop_uids are absent from the "
+            f"source datasets, first is {missing[0]}"
+        )
+
+    ordered = [by_uid[uid] for uid in sop_uids]
+
+    return hd.seg.Segmentation(
+        source_images=ordered,
+        pixel_array=renumbered,
+        segmentation_type=hd.seg.SegmentationTypeValues.LABELMAP,
+        segment_descriptions=descriptions,
+        series_instance_uid=generate_uid(),
+        sop_instance_uid=generate_uid(),
+        series_number=SERIES_NUMBER,
+        instance_number=1,
+        manufacturer="Argus",
+        manufacturer_model_name=algorithm_name,
+        software_versions=software_version,
+        device_serial_number="ARGUS",
+        series_description=f"Argus {algorithm_name}",
+    )
 
 
 def segmentation_to_bytes(segmentation) -> bytes:
