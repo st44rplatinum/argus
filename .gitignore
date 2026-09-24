@@ -1,5 +1,10 @@
 # Data never enters the repo — licences vary and volumes are large.
-data/
+data/*
+# The feature index is the exception: 388 KB, and the 23.58 GB archive it was
+# computed from has been deleted, so it is no longer cheap to rebuild.
+!data/derived/
+data/derived/*
+!data/derived/organ_features.npz
 *.dcm
 *.nii
 *.nii.gz
