@@ -5,6 +5,7 @@ data/*
 !data/derived/
 data/derived/*
 !data/derived/organ_features.npz
+!data/derived/contrast_phase.json
 *.dcm
 *.nii
 *.nii.gz

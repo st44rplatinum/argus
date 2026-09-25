@@ -1,0 +1,502 @@
+{
+  "s0000": {
+    "phase": "portal_venous",
+    "pi_time": 90.11,
+    "probability": 0.7
+  },
+  "s0001": {
+    "phase": "native",
+    "pi_time": -0.04,
+    "probability": 1.0
+  },
+  "s0002": {
+    "phase": "arterial_late",
+    "pi_time": 57.03,
+    "probability": 0.7
+  },
+  "s0003": {
+    "phase": "native",
+    "pi_time": 0.29,
+    "probability": 1.0
+  },
+  "s0004": {
+    "phase": "portal_venous",
+    "pi_time": 74.75,
+    "probability": 1.0
+  },
+  "s0006": {
+    "phase": "native",
+    "pi_time": 0.15,
+    "probability": 1.0
+  },
+  "s0009": {
+    "phase": "native",
+    "pi_time": -0.21,
+    "probability": 1.0
+  },
+  "s0010": {
+    "phase": "portal_venous",
+    "pi_time": 90.26,
+    "probability": 0.7
+  },
+  "s0011": {
+    "phase": "portal_venous",
+    "pi_time": 80.75,
+    "probability": 1.0
+  },
+  "s0012": {
+    "phase": "portal_venous",
+    "pi_time": 74.9,
+    "probability": 1.0
+  },
+  "s0013": {
+    "phase": "portal_venous",
+    "pi_time": 81.97,
+    "probability": 1.0
+  },
+  "s0014": {
+    "phase": "portal_venous",
+    "pi_time": 70.03,
+    "probability": 1.0
+  },
+  "s0015": {
+    "phase": "portal_venous",
+    "pi_time": 92.7,
+    "probability": 0.7
+  },
+  "s0016": {
+    "phase": "arterial_late",
+    "pi_time": 40.3,
+    "probability": 1.0
+  },
+  "s0019": {
+    "phase": "arterial_early",
+    "pi_time": 27.55,
+    "probability": 1.0
+  },
+  "s0021": {
+    "phase": "arterial_late",
+    "pi_time": 39.13,
+    "probability": 1.0
+  },
+  "s0022": {
+    "phase": "native",
+    "pi_time": -0.07,
+    "probability": 1.0
+  },
+  "s0024": {
+    "phase": "arterial_late",
+    "pi_time": 32.19,
+    "probability": 1.0
+  },
+  "s0025": {
+    "phase": "native",
+    "pi_time": 3.49,
+    "probability": 1.0
+  },
+  "s0028": {
+    "phase": "portal_venous",
+    "pi_time": 78.97,
+    "probability": 1.0
+  },
+  "s0029": {
+    "phase": "portal_venous",
+    "pi_time": 72.48,
+    "probability": 1.0
+  },
+  "s0030": {
+    "phase": "portal_venous",
+    "pi_time": 79.76,
+    "probability": 1.0
+  },
+  "s0031": {
+    "phase": "arterial_late",
+    "pi_time": 32.46,
+    "probability": 1.0
+  },
+  "s0032": {
+    "phase": "arterial_early",
+    "pi_time": 29.71,
+    "probability": 1.0
+  },
+  "s0034": {
+    "phase": "arterial_early",
+    "pi_time": 25.99,
+    "probability": 1.0
+  },
+  "s0035": {
+    "phase": "native",
+    "pi_time": 0.3,
+    "probability": 1.0
+  },
+  "s0036": {
+    "phase": "arterial_early",
+    "pi_time": 23.38,
+    "probability": 1.0
+  },
+  "s0037": {
+    "phase": "arterial_late",
+    "pi_time": 59.69,
+    "probability": 0.7
+  },
+  "s0038": {
+    "phase": "portal_venous",
+    "pi_time": 80.06,
+    "probability": 1.0
+  },
+  "s0039": {
+    "phase": "portal_venous",
+    "pi_time": 65.41,
+    "probability": 1.0
+  },
+  "s0040": {
+    "phase": "portal_venous",
+    "pi_time": 78.35,
+    "probability": 1.0
+  },
+  "s0042": {
+    "phase": "portal_venous",
+    "pi_time": 75.08,
+    "probability": 1.0
+  },
+  "s0043": {
+    "phase": "arterial_late",
+    "pi_time": 30.84,
+    "probability": 1.0
+  },
+  "s0044": {
+    "phase": "arterial_late",
+    "pi_time": 37.75,
+    "probability": 1.0
+  },
+  "s0045": {
+    "phase": "portal_venous",
+    "pi_time": 60.83,
+    "probability": 1.0
+  },
+  "s0046": {
+    "phase": "arterial_early",
+    "pi_time": 28.61,
+    "probability": 1.0
+  },
+  "s0048": {
+    "phase": "native",
+    "pi_time": 0.74,
+    "probability": 1.0
+  },
+  "s0049": {
+    "phase": "arterial_late",
+    "pi_time": 53.41,
+    "probability": 0.7
+  },
+  "s0050": {
+    "phase": "portal_venous",
+    "pi_time": 77.93,
+    "probability": 1.0
+  },
+  "s0052": {
+    "phase": "portal_venous",
+    "pi_time": 77.85,
+    "probability": 1.0
+  },
+  "s0053": {
+    "phase": "portal_venous",
+    "pi_time": 69.59,
+    "probability": 1.0
+  },
+  "s0054": {
+    "phase": "portal_venous",
+    "pi_time": 70.17,
+    "probability": 1.0
+  },
+  "s0056": {
+    "phase": "arterial_late",
+    "pi_time": 49.26,
+    "probability": 1.0
+  },
+  "s0057": {
+    "phase": "portal_venous",
+    "pi_time": 80.76,
+    "probability": 1.0
+  },
+  "s0058": {
+    "phase": "portal_venous",
+    "pi_time": 77.27,
+    "probability": 1.0
+  },
+  "s0059": {
+    "phase": "portal_venous",
+    "pi_time": 78.56,
+    "probability": 1.0
+  },
+  "s0061": {
+    "phase": "arterial_late",
+    "pi_time": 45.29,
+    "probability": 1.0
+  },
+  "s0062": {
+    "phase": "native",
+    "pi_time": 0.28,
+    "probability": 1.0
+  },
+  "s0063": {
+    "phase": "arterial_late",
+    "pi_time": 47.05,
+    "probability": 1.0
+  },
+  "s0065": {
+    "phase": "arterial_late",
+    "pi_time": 34.52,
+    "probability": 1.0
+  },
+  "s0066": {
+    "phase": "native",
+    "pi_time": -0.04,
+    "probability": 1.0
+  },
+  "s0067": {
+    "phase": "native",
+    "pi_time": 0.37,
+    "probability": 1.0
+  },
+  "s0068": {
+    "phase": "native",
+    "pi_time": 0.03,
+    "probability": 1.0
+  },
+  "s0069": {
+    "phase": "arterial_early",
+    "pi_time": 24.38,
+    "probability": 1.0
+  },
+  "s0070": {
+    "phase": "portal_venous",
+    "pi_time": 70.37,
+    "probability": 1.0
+  },
+  "s0071": {
+    "phase": "portal_venous",
+    "pi_time": 78.52,
+    "probability": 1.0
+  },
+  "s0072": {
+    "phase": "portal_venous",
+    "pi_time": 83.73,
+    "probability": 1.0
+  },
+  "s0073": {
+    "phase": "native",
+    "pi_time": 0.48,
+    "probability": 1.0
+  },
+  "s0074": {
+    "phase": "native",
+    "pi_time": 0.34,
+    "probability": 1.0
+  },
+  "s0075": {
+    "phase": "portal_venous",
+    "pi_time": 74.29,
+    "probability": 1.0
+  },
+  "s0076": {
+    "phase": "arterial_late",
+    "pi_time": 52.26,
+    "probability": 0.7
+  },
+  "s0077": {
+    "phase": "portal_venous",
+    "pi_time": 87.75,
+    "probability": 1.0
+  },
+  "s0078": {
+    "phase": "portal_venous",
+    "pi_time": 76.43,
+    "probability": 1.0
+  },
+  "s0079": {
+    "phase": "arterial_late",
+    "pi_time": 41.9,
+    "probability": 1.0
+  },
+  "s0080": {
+    "phase": "portal_venous",
+    "pi_time": 68.15,
+    "probability": 1.0
+  },
+  "s0081": {
+    "phase": "native",
+    "pi_time": 0.29,
+    "probability": 1.0
+  },
+  "s0082": {
+    "phase": "portal_venous",
+    "pi_time": 73.91,
+    "probability": 1.0
+  },
+  "s0083": {
+    "phase": "native",
+    "pi_time": 0.31,
+    "probability": 1.0
+  },
+  "s0084": {
+    "phase": "native",
+    "pi_time": 0.29,
+    "probability": 1.0
+  },
+  "s0085": {
+    "phase": "native",
+    "pi_time": 0.29,
+    "probability": 1.0
+  },
+  "s0086": {
+    "phase": "portal_venous",
+    "pi_time": 72.14,
+    "probability": 1.0
+  },
+  "s0088": {
+    "phase": "portal_venous",
+    "pi_time": 66.48,
+    "probability": 1.0
+  },
+  "s0089": {
+    "phase": "portal_venous",
+    "pi_time": 74.99,
+    "probability": 1.0
+  },
+  "s0090": {
+    "phase": "portal_venous",
+    "pi_time": 77.12,
+    "probability": 1.0
+  },
+  "s0091": {
+    "phase": "portal_venous",
+    "pi_time": 67.87,
+    "probability": 1.0
+  },
+  "s0092": {
+    "phase": "native",
+    "pi_time": 0.2,
+    "probability": 1.0
+  },
+  "s0095": {
+    "phase": "arterial_late",
+    "pi_time": 35.67,
+    "probability": 1.0
+  },
+  "s0096": {
+    "phase": "portal_venous",
+    "pi_time": 66.7,
+    "probability": 1.0
+  },
+  "s0098": {
+    "phase": "native",
+    "pi_time": -0.08,
+    "probability": 1.0
+  },
+  "s0099": {
+    "phase": "native",
+    "pi_time": 3.49,
+    "probability": 1.0
+  },
+  "s0100": {
+    "phase": "native",
+    "pi_time": 1.73,
+    "probability": 1.0
+  },
+  "s0101": {
+    "phase": "native",
+    "pi_time": 0.29,
+    "probability": 1.0
+  },
+  "s0102": {
+    "phase": "portal_venous",
+    "pi_time": 63.63,
+    "probability": 1.0
+  },
+  "s0103": {
+    "phase": "native",
+    "pi_time": 0.29,
+    "probability": 1.0
+  },
+  "s0104": {
+    "phase": "native",
+    "pi_time": 0.17,
+    "probability": 1.0
+  },
+  "s0105": {
+    "phase": "portal_venous",
+    "pi_time": 71.96,
+    "probability": 1.0
+  },
+  "s0106": {
+    "phase": "portal_venous",
+    "pi_time": 71.68,
+    "probability": 1.0
+  },
+  "s0107": {
+    "phase": "portal_venous",
+    "pi_time": 77.54,
+    "probability": 1.0
+  },
+  "s0108": {
+    "phase": "portal_venous",
+    "pi_time": 85.37,
+    "probability": 1.0
+  },
+  "s0109": {
+    "phase": "portal_venous",
+    "pi_time": 74.4,
+    "probability": 1.0
+  },
+  "s0110": {
+    "phase": "arterial_late",
+    "pi_time": 38.2,
+    "probability": 1.0
+  },
+  "s0111": {
+    "phase": "arterial_late",
+    "pi_time": 30.92,
+    "probability": 1.0
+  },
+  "s0112": {
+    "phase": "arterial_late",
+    "pi_time": 42.13,
+    "probability": 1.0
+  },
+  "s0114": {
+    "phase": "arterial_early",
+    "pi_time": 26.43,
+    "probability": 1.0
+  },
+  "s0115": {
+    "phase": "arterial_late",
+    "pi_time": 42.24,
+    "probability": 1.0
+  },
+  "s0117": {
+    "phase": "native",
+    "pi_time": -0.02,
+    "probability": 1.0
+  },
+  "s0119": {
+    "phase": "portal_venous",
+    "pi_time": 64.25,
+    "probability": 1.0
+  },
+  "s0120": {
+    "phase": "portal_venous",
+    "pi_time": 73.67,
+    "probability": 1.0
+  },
+  "s0122": {
+    "phase": "native",
+    "pi_time": -0.02,
+    "probability": 1.0
+  },
+  "s0123": {
+    "phase": "arterial_late",
+    "pi_time": 51.56,
+    "probability": 0.7
+  }
+}
