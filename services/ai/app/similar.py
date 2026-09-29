@@ -21,10 +21,12 @@ from .deconfound import apply_phase_offsets, fit_phase_offsets
 from .encoder import ENCODER_ID, PREPROCESS_VERSION
 from .retrieval import equal_influence_weight, standardise
 
-BASELINE = Path("data/derived/organ_features.npz")
-LEARNED = Path("data/derived/organ_embeddings_dinov2s.npz")
-PHASES = Path("data/derived/contrast_phase.json")
-POOL = Path("data/derived/pool.json")
+# from the repo root, wherever the service was started
+DERIVED = Path(__file__).resolve().parents[3] / "data" / "derived"
+BASELINE = DERIVED / "organ_features.npz"
+LEARNED = DERIVED / "organ_embeddings_dinov2s.npz"
+PHASES = DERIVED / "contrast_phase.json"
+POOL = DERIVED / "pool.json"
 
 MIN_PHASE_GROUP = 5
 REASONS = 2
@@ -109,6 +111,14 @@ def load() -> SimilarIndex:
         pool=pool,
         version=version,
     )
+
+
+def case_for_study(study_uid: str) -> str | None:
+    """The pool case a study came from, if any, so it can leave itself out."""
+    for case, entry in load().pool.items():
+        if entry["study_uid"] == study_uid:
+            return case
+    return None
 
 
 def _unit(v: np.ndarray) -> np.ndarray:

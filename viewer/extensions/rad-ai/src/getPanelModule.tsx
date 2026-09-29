@@ -2,6 +2,7 @@ import React from 'react';
 
 import JobsPanel from './panels/JobsPanel';
 import SeriesInfoPanel from './panels/SeriesInfoPanel';
+import SimilarPanel from './panels/SimilarPanel';
 
 export default function getPanelModule({ servicesManager }: withAppTypes) {
   return [
@@ -18,6 +19,13 @@ export default function getPanelModule({ servicesManager }: withAppTypes) {
       iconLabel: 'AI',
       label: 'AI',
       component: () => <JobsPanel servicesManager={servicesManager} />,
+    },
+    {
+      name: 'similar',
+      iconName: 'tab-linear',
+      iconLabel: 'Similar',
+      label: 'Similar cases',
+      component: () => <SimilarPanel servicesManager={servicesManager} />,
     },
   ];
 }

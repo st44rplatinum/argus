@@ -10,10 +10,8 @@ export type Job = {
   status: JobStatus;
   stage: string | null;
   error: string | null;
-  result: {
-    voxel_count: number;
-    seg_series_uid: string | null;
-  } | null;
+  // Shape depends on the model; each panel reads the fields it asked for.
+  result: Record<string, any> | null;
   request: Record<string, unknown>;
   created_at: string;
   cached?: boolean;
@@ -37,6 +35,10 @@ export async function submitJob(params: {
   low?: number;
   high?: number;
   store?: boolean;
+  model?: 'threshold' | 'totalsegmentator' | 'similar';
+  organ?: string;
+  k?: number;
+  phase_centred?: boolean;
 }): Promise<Job> {
   return json(
     await fetch(`${BASE}/jobs`, {
@@ -50,6 +52,19 @@ export async function submitJob(params: {
 export async function listJobs(): Promise<Job[]> {
   return json(await fetch(`${BASE}/jobs`));
 }
+
+export async function getJob(jobId: string): Promise<Job> {
+  return json(await fetch(`${BASE}/jobs/${jobId}`));
+}
+
+export type SimilarMatch = {
+  case: string;
+  similarity: number;
+  phase: string | null;
+  study_uid: string;
+  series_uid: string;
+  reasons: string[];
+};
 
 export async function cancelJob(jobId: string): Promise<Job> {
   return json(await fetch(`${BASE}/jobs/${jobId}/cancel`, { method: 'POST' }));

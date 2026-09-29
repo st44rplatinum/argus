@@ -185,7 +185,7 @@ def run_similar(request, progress_queue, result_queue):
         from .describe import describe
         from .dicomweb import client_for, load_series
         from .nifti import sitk_like, volume_to_sitk
-        from .similar import search
+        from .similar import case_for_study, search
         from .totalseg import run, structure_names
 
         organ = request["organ"]
@@ -238,7 +238,7 @@ def run_similar(request, progress_queue, result_queue):
             phase=phase,
             k=request.get("k", 5),
             phase_centred=request.get("phase_centred", False),
-            exclude_case=request.get("exclude_case"),
+            exclude_case=request.get("exclude_case") or case_for_study(request["study_uid"]),
         )
 
         result_queue.put({
@@ -279,7 +279,10 @@ def _run_one(job_id):
     process = multiprocessing.Process(
         target=target,
         args=(job["request"], progress_queue, result_queue),
-        daemon=True,
+        # Not daemonic: nnU-Net inside TotalSegmentator starts its own pool,
+        # and daemonic processes may not have children. stop_all() does the
+        # cleanup daemon=True used to.
+        daemon=False,
     )
     process.start()
     jobs.running_processes[job_id] = process
@@ -332,3 +335,10 @@ def start():
     _limit_threads()
     _worker_thread = threading.Thread(target=_loop, daemon=True, name="argus-worker")
     _worker_thread.start()
+
+
+def stop_all():
+    """Terminate running jobs, so shutting the service down does not wait on them."""
+    for process in list(jobs.running_processes.values()):
+        if process.is_alive():
+            process.terminate()

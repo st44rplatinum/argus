@@ -16,7 +16,7 @@ const STATUS_COLOUR: Record<string, string> = {
 
 function JobRow({ job, onCancel }: { job: Job; onCancel: (id: string) => void }) {
   const running = job.status === 'queued' || job.status === 'running';
-  const params = job.request as { low?: number; high?: number };
+  const params = job.request as { low?: number; high?: number; model?: string; organ?: string };
 
   return (
     <div className="border-border border-b py-2 text-xs">
@@ -37,12 +37,21 @@ function JobRow({ job, onCancel }: { job: Job; onCancel: (id: string) => void })
       </div>
 
       <div className="text-muted-foreground mt-1 font-mono">
-        {params.low} – {params.high} HU
-        {job.result ? ` · ${job.result.voxel_count.toLocaleString()} voxels` : ''}
+        {params.model === 'similar' ? (
+          <>
+            similar {params.organ}
+            {job.result ? ` · ${job.result.results.length} matches` : ''}
+          </>
+        ) : (
+          <>
+            {params.low} – {params.high} HU
+            {job.result ? ` · ${job.result.voxel_count.toLocaleString()} voxels` : ''}
+          </>
+        )}
       </div>
 
       {job.error ? (
-        <div className="text-red-500 mt-1 break-words">{job.error.split('\n')[0]}</div>
+        <div className="text-red-500 mt-1 break-words">{job.error.split('\n').filter(Boolean).pop()}</div>
       ) : null}
 
       {job.result?.seg_series_uid ? (

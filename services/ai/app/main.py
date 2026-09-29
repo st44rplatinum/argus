@@ -34,6 +34,7 @@ async def lifespan(app: FastAPI):
     db.mark_interrupted_jobs_failed()
     worker.start()
     yield
+    worker.stop_all()
 
 
 app = FastAPI(title="Argus", lifespan=lifespan)
