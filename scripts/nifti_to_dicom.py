@@ -11,6 +11,7 @@ left-right flips come from, and a flipped abdomen looks entirely normal.
 from __future__ import annotations
 
 import argparse
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -24,7 +25,42 @@ from pydicom.uid import CTImageStorage, ExplicitVRLittleEndian, generate_uid
 INTERCEPT = 0
 
 
-def write_series(image: sitk.Image, out_dir: Path, description: str) -> tuple[str, int]:
+def read_nifti(path: Path) -> sitk.Image:
+    """Read a NIfTI, squaring up direction cosines ITK rejects.
+
+    Some TotalSegmentator cases have directions a few 1e-4 off orthogonal
+    (float32 rounding) and no qform, and ITK refuses them outright. The
+    nearest orthonormal matrix moves nothing by more than a fraction of a mm.
+    """
+    try:
+        return sitk.ReadImage(str(path))
+    except RuntimeError:
+        pass
+
+    import nibabel as nib
+
+    image = nib.load(path)
+    affine = image.affine.copy()
+    zooms = np.sqrt((affine[:3, :3] ** 2).sum(axis=0))
+    u, _, vt = np.linalg.svd(affine[:3, :3] / zooms)
+    affine[:3, :3] = (u @ vt) * zooms
+
+    fixed = nib.Nifti1Image(np.asanyarray(image.dataobj), affine, image.header)
+    fixed.set_sform(affine, code=2)
+    fixed.set_qform(affine, code=1)
+
+    with tempfile.TemporaryDirectory(prefix="argus-n2d-") as workdir:
+        target = Path(workdir) / "fixed.nii.gz"
+        nib.save(fixed, target)
+        return sitk.ReadImage(str(target))
+
+
+def write_series(
+    image: sitk.Image,
+    out_dir: Path,
+    description: str,
+    patient_id: str,
+) -> tuple[str, int]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # sitk index order is (x, y, z); the array comes back as [z, y, x].
@@ -67,8 +103,8 @@ def write_series(image: sitk.Image, out_dir: Path, description: str) -> tuple[st
         ds.SeriesInstanceUID = series_uid
         ds.FrameOfReferenceUID = frame_uid
 
-        ds.PatientName = "EXAMPLE^CT"
-        ds.PatientID = "EXAMPLE001"
+        ds.PatientName = patient_id
+        ds.PatientID = patient_id
         ds.PatientBirthDate = ""
         ds.PatientSex = "O"
 
@@ -118,10 +154,20 @@ def main() -> None:
     parser.add_argument("nifti", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--description", default="Example CT")
+    parser.add_argument(
+        "--patient-id",
+        default="EXAMPLE001",
+        help="DICOM PatientID and PatientName.",
+    )
     args = parser.parse_args()
 
-    image = sitk.ReadImage(str(args.nifti))
-    series_uid, count = write_series(image, args.out, args.description)
+    image = read_nifti(args.nifti)
+    series_uid, count = write_series(
+        image,
+        args.out,
+        args.description,
+        args.patient_id,
+    )
 
     print(f"wrote {count} instances to {args.out}")
     print(f"SeriesInstanceUID {series_uid}")
