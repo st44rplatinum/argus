@@ -75,18 +75,6 @@ def run(
             ),
         )
 
-        # Temporary diagnostic to establish exactly where the installed
-        # TotalSegmentator version writes statistics.json.
-        if statistics:
-            print(
-                "TotalSegmentator output:",
-                sorted(
-                    str(path.relative_to(work))
-                    for path in work.rglob("*")
-                ),
-                flush=True,
-            )
-
         labels = sitk.ReadImage(str(target))
         labelmap = sitk.GetArrayFromImage(labels)
 
