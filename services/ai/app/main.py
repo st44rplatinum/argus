@@ -77,6 +77,12 @@ class SegmentRequest(BaseModel):
     model: str = "threshold"
     fast: bool = True
 
+    # model == "similar"
+    organ: str | None = None
+    k: int = 5
+    phase_centred: bool = False
+    exclude_case: str | None = None
+
 
 @app.get("/health")
 def health():
@@ -140,7 +146,19 @@ def create_job(request: SegmentRequest):
     # The parameters belong in the key. Threshold 300-3000 and 400-3000 are
     # different answers for the same series and the same model.
     parameters = {"store": request.store}
-    if request.model == "totalsegmentator":
+    if request.model == "similar":
+        from .similar import load
+
+        if request.organ is None:
+            raise HTTPException(422, "similar needs an organ")
+        parameters = {
+            "organ": request.organ,
+            "k": request.k,
+            "phase_centred": request.phase_centred,
+            "exclude_case": request.exclude_case,
+            "index": load().version,
+        }
+    elif request.model == "totalsegmentator":
         parameters["fast"] = request.fast
     else:
         parameters.update({"low": request.low, "high": request.high})

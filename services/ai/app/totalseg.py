@@ -7,6 +7,7 @@ this model takes minutes on CPU, that distinction is worth a second of work.
 
 from __future__ import annotations
 
+import json
 import tempfile
 from pathlib import Path
 
@@ -26,11 +27,23 @@ def structure_names() -> dict[int, str]:
     return dict(class_map[TASK])
 
 
-def run(volume, fast: bool = True, force_split: bool = False) -> np.ndarray:
-    """Segment a volume, returning a label map the same shape as its array.
+def run(
+    volume,
+    fast: bool = True,
+    force_split: bool = False,
+    statistics: bool = False,
+    stats_aggregation: str = "median",
+    statistics_exclude_masks_at_border: bool = False,
+):
+    """Segment a volume.
 
-    `fast` is the 3 mm model. The full-resolution one wants 7 GB of VRAM and
-    this machine's card has 4, so fast is the default rather than the option.
+    Returns the label map by default.
+
+    When ``statistics=True``, returns:
+
+        (labelmap, stats)
+
+    where ``stats`` is the parsed TotalSegmentator statistics.json.
     """
     from totalsegmentator.python_api import totalsegmentator
 
@@ -55,19 +68,59 @@ def run(volume, fast: bool = True, force_split: bool = False) -> np.ndarray:
             nr_thr_resamp=ARGUS_THREADS,
             nr_thr_saving=ARGUS_THREADS,
             quiet=True,
+            statistics=statistics,
+            stats_aggregation=stats_aggregation,
+            statistics_exclude_masks_at_border=(
+                statistics_exclude_masks_at_border
+            ),
         )
+
+        # Temporary diagnostic to establish exactly where the installed
+        # TotalSegmentator version writes statistics.json.
+        if statistics:
+            print(
+                "TotalSegmentator output:",
+                sorted(
+                    str(path.relative_to(work))
+                    for path in work.rglob("*")
+                ),
+                flush=True,
+            )
 
         labels = sitk.ReadImage(str(target))
         labelmap = sitk.GetArrayFromImage(labels)
 
+        stats = None
+
+        if statistics:
+            stats_files = list(work.rglob("statistics.json"))
+
+            if not stats_files:
+                raise RuntimeError(
+                    "TotalSegmentator was asked for statistics but no "
+                    f"statistics.json was produced under {work}"
+                )
+
+            if len(stats_files) > 1:
+                raise RuntimeError(
+                    "Multiple statistics.json files found: "
+                    + ", ".join(map(str, stats_files))
+                )
+
+            with stats_files[0].open() as f:
+                stats = json.load(f)
+
     # The model resamples internally and puts the result back on the input
-    # grid, so this should already hold. Assert it rather than assume it: a
-    # label map of the wrong shape would be caught later by the SEG builder,
-    # but with a message about source instances rather than about resampling.
+    # grid, so this should already hold. Assert it rather than assume it.
     if labelmap.shape != volume.array.shape:
         raise ValueError(
             f"label map {labelmap.shape} does not match volume "
             f"{volume.array.shape}"
         )
 
-    return labelmap.astype(np.uint16)
+    labelmap = labelmap.astype(np.uint16)
+
+    if statistics:
+        return labelmap, stats
+
+    return labelmap

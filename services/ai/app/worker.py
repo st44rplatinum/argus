@@ -38,28 +38,41 @@ def run_segmentation(request, progress_queue, result_queue):
     try:
         import numpy as np
 
+        from .dicomweb import client_for, load_series
+
+        client = client_for(request["dicomweb_url"])
+
+        progress_queue.put("fetching")
+
+        volume = load_series(
+            client,
+            request["study_uid"],
+            request["series_uid"],
+        )
+
         from .dicom_seg import (
             build_multi_segmentation,
             build_segmentation,
             store_segmentation,
         )
-        from .dicomweb import client_for, load_series
         from .segment import calculate_bounding_box, threshold_segment
-
-        client = client_for(request["dicomweb_url"])
-        model = request.get("model", "threshold")
-
-        progress_queue.put("fetching")
-        volume = load_series(client, request["study_uid"], request["series_uid"])
 
         progress_queue.put("inferring")
 
-        if model == "totalsegmentator":
+        if request.get("model", "threshold") == "totalsegmentator":
             from .totalseg import run, structure_names
 
-            labelmap = run(volume, fast=request.get("fast", True))
+            labelmap = run(
+                volume,
+                fast=request.get("fast", True),
+            )
+
             names = structure_names()
-            present = [int(v) for v in np.unique(labelmap) if v != 0]
+            present = [
+                int(v)
+                for v in np.unique(labelmap)
+                if v != 0
+            ]
 
             if not present:
                 result_queue.put({
@@ -72,20 +85,36 @@ def run_segmentation(request, progress_queue, result_queue):
                 "shape": list(volume.shape),
                 "spacing_mm": list(volume.spacing),
                 "voxel_count": int((labelmap != 0).sum()),
-                "structures": [names.get(v, str(v)) for v in present],
+                "structures": [
+                    names.get(v, str(v))
+                    for v in present
+                ],
                 "seg_series_uid": None,
             }
-            build = lambda sources: build_multi_segmentation(  # noqa: E731
-                sources, labelmap, volume.sop_uids, names
+
+            build = lambda sources: build_multi_segmentation(
+                sources,
+                labelmap,
+                volume.sop_uids,
+                names,
             )
+
         else:
-            mask = threshold_segment(volume, request["low"], request["high"])
+            mask = threshold_segment(
+                volume,
+                request["low"],
+                request["high"],
+            )
+
             box = calculate_bounding_box(mask)
 
             if box is None:
                 result_queue.put({
                     "status": "failed",
-                    "error": f"No voxels in [{request['low']}, {request['high']}] HU",
+                    "error": (
+                        f"No voxels in "
+                        f"[{request['low']}, {request['high']}] HU"
+                    ),
                 })
                 return
 
@@ -96,22 +125,126 @@ def run_segmentation(request, progress_queue, result_queue):
                 "bounding_box": box,
                 "seg_series_uid": None,
             }
-            build = lambda sources: build_segmentation(  # noqa: E731
-                sources, mask, volume.sop_uids
+
+            build = lambda sources: build_segmentation(
+                sources,
+                mask,
+                volume.sop_uids,
             )
 
         if request.get("store"):
             progress_queue.put("encoding")
+
             sources = client.retrieve_series(
                 study_instance_uid=request["study_uid"],
                 series_instance_uid=request["series_uid"],
             )
+
             segmentation = build(sources)
 
             progress_queue.put("storing")
-            result["seg_series_uid"] = store_segmentation(client, segmentation)
 
-        result_queue.put({"status": "done", "result": result})
+            result["seg_series_uid"] = store_segmentation(
+                client,
+                segmentation,
+            )
+
+        result_queue.put({
+            "status": "done",
+            "result": result,
+        })
+
+    except Exception as exc:
+        result_queue.put({
+            "status": "failed",
+            "error": str(exc),
+            "traceback": traceback.format_exc(),
+        })
+
+
+def _contrast_phase(ct_nii, stats):
+    """Phase from the classifier, reusing the statistics already computed."""
+    from totalsegmentator.bin.totalseg_get_phase import get_ct_contrast_phase
+
+    final = None
+    for item in get_ct_contrast_phase(ct_nii, device="cpu", quiet=True, existing_stats=stats):
+        final = item
+    return final["result"]["phase"]
+
+
+def run_similar(request, progress_queue, result_queue):
+    """Runs in a subprocess, like run_segmentation."""
+    try:
+        import tempfile
+        from pathlib import Path
+
+        import nibabel as nib
+        import numpy as np
+        import SimpleITK as sitk
+
+        from .describe import describe
+        from .dicomweb import client_for, load_series
+        from .nifti import sitk_like, volume_to_sitk
+        from .similar import search
+        from .totalseg import run, structure_names
+
+        organ = request["organ"]
+        client = client_for(request["dicomweb_url"])
+
+        progress_queue.put("fetching")
+        volume = load_series(client, request["study_uid"], request["series_uid"])
+
+        # Same arguments the phase classifier uses, so its stats can be reused.
+        progress_queue.put("segmenting")
+        labelmap, stats = run(
+            volume,
+            fast=True,
+            statistics=True,
+            stats_aggregation="median",
+            statistics_exclude_masks_at_border=False,
+        )
+
+        values = [v for v, name in structure_names().items() if name == organ]
+        if not values:
+            raise ValueError(f"unknown organ: {organ}")
+        mask = (labelmap == values[0]).astype(np.uint8)
+        if not mask.any():
+            raise ValueError(f"TotalSegmentator found no {organ} in this series")
+
+        # Through a .nii.gz and nib.load, the same loader the index used.
+        with tempfile.TemporaryDirectory(prefix="argus-similar-") as workdir:
+            ct_path = Path(workdir) / "ct.nii.gz"
+            mask_path = Path(workdir) / "mask.nii.gz"
+            ct_image = volume_to_sitk(volume)
+            sitk.WriteImage(ct_image, str(ct_path))
+            sitk.WriteImage(sitk_like(ct_image, mask), str(mask_path))
+            ct_nii = nib.load(ct_path)
+            mask_nii = nib.load(mask_path)
+
+            progress_queue.put("classifying")
+            phase = _contrast_phase(ct_nii, stats)
+
+            progress_queue.put("describing")
+            baseline, embedding = describe(ct_nii, mask_nii)
+
+        if baseline is None or embedding is None:
+            raise ValueError(f"{organ} too small to describe")
+
+        progress_queue.put("searching")
+        results = search(
+            baseline,
+            embedding,
+            organ=organ,
+            phase=phase,
+            k=request.get("k", 5),
+            phase_centred=request.get("phase_centred", False),
+            exclude_case=request.get("exclude_case"),
+        )
+
+        result_queue.put({
+            "status": "done",
+            "result": {"organ": organ, "phase": phase, "results": results},
+        })
 
     except Exception as exc:
         result_queue.put({
@@ -142,8 +275,9 @@ def _run_one(job_id):
     progress_queue = multiprocessing.Queue()
     result_queue = multiprocessing.Queue()
 
+    target = run_similar if job["request"].get("model") == "similar" else run_segmentation
     process = multiprocessing.Process(
-        target=run_segmentation,
+        target=target,
         args=(job["request"], progress_queue, result_queue),
         daemon=True,
     )
