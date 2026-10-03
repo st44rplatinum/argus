@@ -60,17 +60,15 @@ def write_series(
     out_dir: Path,
     description: str,
     patient_id: str,
+    study_date: str = "20260101",
 ) -> tuple[str, int]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # sitk index order is (x, y, z); the array comes back as [z, y, x].
     array = sitk.GetArrayFromImage(image).astype(np.float32)
     spacing = image.GetSpacing()
     origin = np.array(image.GetOrigin(), dtype=np.float64)
     direction = np.array(image.GetDirection(), dtype=np.float64).reshape(3, 3)
 
-    # Column k of the direction matrix is the patient-space direction of
-    # voxel axis k.
     axis_x = direction[:, 0]
     axis_y = direction[:, 1]
     axis_z = direction[:, 2]
@@ -81,10 +79,6 @@ def write_series(
     series_uid = generate_uid()
     frame_uid = generate_uid()
 
-    # int16 spans -32768..32767, which covers every Hounsfield value a CT
-    # produces, so nothing is clipped at either end. The phantom's unsigned
-    # 12-bit storage would lose both this scan's 3343 HU peak and its -1094 HU
-    # air, neither of which announces itself.
     stored = np.rint(array - INTERCEPT).astype(np.int16)
 
     for k in range(slices):
@@ -108,7 +102,7 @@ def write_series(
         ds.PatientBirthDate = ""
         ds.PatientSex = "O"
 
-        ds.StudyDate = "20260101"
+        ds.StudyDate = study_date
         ds.StudyTime = "120000"
         ds.StudyID = "1"
         ds.AccessionNumber = "EXAMPLE"
@@ -118,14 +112,10 @@ def write_series(
         ds.SeriesNumber = 1
         ds.InstanceNumber = k + 1
 
-        # First three values are the direction of increasing column index,
-        # next three of increasing row index. The array is [z, y, x], so a
-        # row runs along x and a column runs along y.
         ds.ImageOrientationPatient = [*axis_x, *axis_y]
         ds.ImagePositionPatient = list(origin + k * spacing[2] * axis_z)
         ds.SliceThickness = float(spacing[2])
         ds.SpacingBetweenSlices = float(spacing[2])
-        # [between rows, between columns] — y first, then x.
         ds.PixelSpacing = [float(spacing[1]), float(spacing[0])]
 
         ds.Rows = rows
@@ -135,7 +125,7 @@ def write_series(
         ds.BitsAllocated = 16
         ds.BitsStored = 16
         ds.HighBit = 15
-        ds.PixelRepresentation = 1  # signed
+        ds.PixelRepresentation = 1
         ds.RescaleIntercept = INTERCEPT
         ds.RescaleSlope = 1
         ds.RescaleType = "HU"
@@ -143,10 +133,13 @@ def write_series(
         ds.WindowWidth = 400
 
         ds.PixelData = stored[k].tobytes()
-
-        ds.save_as(out_dir / f"slice_{k:04d}.dcm", enforce_file_format=True)
+        ds.save_as(
+            out_dir / f"slice_{k:04d}.dcm",
+            enforce_file_format=True,
+        )
 
     return series_uid, slices
+
 
 
 def main() -> None:
@@ -159,6 +152,11 @@ def main() -> None:
         default="EXAMPLE001",
         help="DICOM PatientID and PatientName.",
     )
+    parser.add_argument(
+    "--study-date",
+    default="20260101",
+    help="DICOM StudyDate in YYYYMMDD format.",
+    )
     args = parser.parse_args()
 
     image = read_nifti(args.nifti)
@@ -167,6 +165,7 @@ def main() -> None:
         args.out,
         args.description,
         args.patient_id,
+        study_date=args.study_date,
     )
 
     print(f"wrote {count} instances to {args.out}")

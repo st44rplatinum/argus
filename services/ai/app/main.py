@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 from dicomweb_client.api import DICOMwebClient
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from . import db, jobs, worker
 from .cache import make_cache_key
@@ -67,23 +67,26 @@ class SegmentRequest(BaseModel):
     study_uid: str
     series_uid: str
 
-    # Bone is roughly >300 HU. The phantom's spine is 700.
-    low: float = Field(default=300)
-    high: float = Field(default=3000)
+    low: float = 300
+    high: float = 3000
 
     store: bool = False
 
-    # "threshold" is a second and needs nothing; "totalsegmentator" is minutes
-    # on CPU and downloads weights on first use.
     model: str = "threshold"
     fast: bool = True
 
-    # model == "similar"
     organ: str | None = None
     k: int = 5
     phase_centred: bool = False
     exclude_case: str | None = None
 
+    # register / lesion_change: study_uid and series_uid are the current scan
+    prior_study_uid: str | None = None
+    prior_series_uid: str | None = None
+    prior_study_date: str | None = None
+
+    # lesion change
+    point: list[float] | None = None
 
 @app.get("/health")
 def health():
@@ -142,6 +145,16 @@ def segment(request: SegmentRequest):
     return result
 
 
+def registration_key(series_uid: str, prior_series_uid: str) -> str:
+    """Cache key of a register job, also where its transform is saved."""
+    return make_cache_key(
+        series_uid,
+        "register",
+        MODEL_VERSION,
+        {"prior_series_uid": prior_series_uid},
+    )
+
+
 @app.post("/jobs")
 def create_job(request: SegmentRequest):
     # The parameters belong in the key. Threshold 300-3000 and 400-3000 are
@@ -159,6 +172,14 @@ def create_job(request: SegmentRequest):
             "exclude_case": request.exclude_case,
             "index": load().version,
         }
+    elif request.model in ("register", "lesion_change"):
+        if not (request.prior_study_uid and request.prior_series_uid):
+            raise HTTPException(422, f"{request.model} needs prior_study_uid and prior_series_uid")
+        parameters = {"prior_series_uid": request.prior_series_uid}
+        if request.model == "lesion_change":
+            if request.point is None or len(request.point) != 3:
+                raise HTTPException(422, "lesion_change needs a 3D point")
+            parameters["point"] = [round(v, 2) for v in request.point]
     elif request.model == "totalsegmentator":
         parameters["fast"] = request.fast
     else:
@@ -178,6 +199,10 @@ def create_job(request: SegmentRequest):
     payload = request.model_dump()
     payload["cache_key"] = cache_key
     payload["dicomweb_url"] = DICOMWEB_URL
+    if request.model == "lesion_change":
+        payload["registration_key"] = registration_key(
+            request.series_uid, request.prior_series_uid
+        )
 
     return {**jobs.submit_job(payload), "cached": False}
 
