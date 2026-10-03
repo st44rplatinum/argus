@@ -47,3 +47,6 @@ jobs.sqlite3
 # Dataset downloads and their logs
 data/raw/*.zip
 data/raw/download.log
+
+# Guides and the roadmap stay local
+docs/
