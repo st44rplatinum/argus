@@ -27,6 +27,7 @@ const extensionDependencies = {
 const seriesInfoPanel = '@argus/extension-rad-ai.panelModule.seriesInfo';
 const jobsPanel = '@argus/extension-rad-ai.panelModule.jobs';
 const similarPanel = '@argus/extension-rad-ai.panelModule.similar';
+const longitudinalPanel = '@argus/extension-rad-ai.panelModule.longitudinal';
 
 const modeInstance = {
   id,
@@ -54,7 +55,7 @@ const modeInstance = {
           leftPanels: [ohif.thumbnailList],
           leftPanelResizable: true,
 
-          rightPanels: [jobsPanel, similarPanel, seriesInfoPanel, cornerstone.labelMapSegmentationPanel],
+          rightPanels: [jobsPanel, similarPanel, longitudinalPanel, seriesInfoPanel, cornerstone.labelMapSegmentationPanel],
           rightPanelResizable: true,
 
           viewports: [

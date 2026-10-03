@@ -35,10 +35,14 @@ export async function submitJob(params: {
   low?: number;
   high?: number;
   store?: boolean;
-  model?: 'threshold' | 'totalsegmentator' | 'similar';
+  model?: 'threshold' | 'totalsegmentator' | 'similar' | 'register' | 'lesion_change';
   organ?: string;
   k?: number;
   phase_centred?: boolean;
+  prior_study_uid?: string;
+  prior_series_uid?: string;
+  prior_study_date?: string;
+  point?: number[];
 }): Promise<Job> {
   return json(
     await fetch(`${BASE}/jobs`, {
@@ -64,6 +68,24 @@ export type SimilarMatch = {
   study_uid: string;
   series_uid: string;
   reasons: string[];
+};
+
+export type RegisterResult = {
+  registered_series_uid: string;
+  rigid_parameters: number[];
+  seconds: number;
+};
+
+export type LesionSize = { volume_mm3: number; diameter_mm: number };
+
+export type LesionChange = {
+  point_current: number[];
+  point_prior: number[];
+  current: LesionSize;
+  prior: LesionSize;
+  change_percent: number | null;
+  warped_prior: LesionSize;
+  warped_change_percent: number | null;
 };
 
 export async function cancelJob(jobId: string): Promise<Job> {

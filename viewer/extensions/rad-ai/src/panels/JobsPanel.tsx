@@ -14,6 +14,25 @@ const STATUS_COLOUR: Record<string, string> = {
   cancelled: 'text-muted-foreground',
 };
 
+// One line per job. Results differ by model, so nothing here assumes a field.
+function describe(model: string | undefined, job: Job) {
+  const r = job.result;
+  const params = job.request as { low?: number; high?: number; organ?: string };
+
+  switch (model) {
+    case 'similar':
+      return `similar ${params.organ}${r?.results ? ` · ${r.results.length} matches` : ''}`;
+    case 'register':
+      return `register prior${r?.seconds != null ? ` · ${Math.round(r.seconds)} s` : ''}`;
+    case 'lesion_change':
+      return `lesion change${r?.change_percent != null ? ` · ${r.change_percent > 0 ? '+' : ''}${Math.round(r.change_percent)}%` : ''}`;
+    case 'totalsegmentator':
+      return `TotalSegmentator${r?.structures ? ` · ${r.structures.length} structures` : ''}`;
+    default:
+      return `${params.low} – ${params.high} HU${r?.voxel_count != null ? ` · ${r.voxel_count.toLocaleString()} voxels` : ''}`;
+  }
+}
+
 function JobRow({ job, onCancel }: { job: Job; onCancel: (id: string) => void }) {
   const running = job.status === 'queued' || job.status === 'running';
   const params = job.request as { low?: number; high?: number; model?: string; organ?: string };
@@ -36,19 +55,7 @@ function JobRow({ job, onCancel }: { job: Job; onCancel: (id: string) => void })
         ) : null}
       </div>
 
-      <div className="text-muted-foreground mt-1 font-mono">
-        {params.model === 'similar' ? (
-          <>
-            similar {params.organ}
-            {job.result ? ` · ${job.result.results.length} matches` : ''}
-          </>
-        ) : (
-          <>
-            {params.low} – {params.high} HU
-            {job.result ? ` · ${job.result.voxel_count.toLocaleString()} voxels` : ''}
-          </>
-        )}
-      </div>
+      <div className="text-muted-foreground mt-1 font-mono">{describe(params.model, job)}</div>
 
       {job.error ? (
         <div className="text-red-500 mt-1 break-words">{job.error.split('\n').filter(Boolean).pop()}</div>

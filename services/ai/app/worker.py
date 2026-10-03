@@ -442,6 +442,11 @@ def _native_lesion(image, seed_point, radius_mm=20.0):
     # however blurred, so two scans of different sharpness still agree.
     z, y, x = seed[::-1]
     inside = float(np.median(values[max(z - 1, 0) : z + 2, max(y - 1, 0) : y + 2, max(x - 1, 0) : x + 2]))
+
+    # air or gas, not tissue: nothing to measure
+    if inside < -500:
+        raise ValueError(f"that point is air or gas ({inside:.0f} HU), place the Probe on the lesion")
+
     around = float(np.median(values))
     half = (inside + around) / 2.0
     span = abs(around - inside)

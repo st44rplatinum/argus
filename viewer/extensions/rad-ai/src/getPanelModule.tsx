@@ -1,10 +1,11 @@
 import React from 'react';
 
 import JobsPanel from './panels/JobsPanel';
+import LongitudinalPanel from './panels/LongitudinalPanel';
 import SeriesInfoPanel from './panels/SeriesInfoPanel';
 import SimilarPanel from './panels/SimilarPanel';
 
-export default function getPanelModule({ servicesManager }: withAppTypes) {
+export default function getPanelModule({ servicesManager, extensionManager }: withAppTypes) {
   return [
     {
       name: 'seriesInfo',
@@ -26,6 +27,18 @@ export default function getPanelModule({ servicesManager }: withAppTypes) {
       iconLabel: 'Similar',
       label: 'Similar cases',
       component: () => <SimilarPanel servicesManager={servicesManager} />,
+    },
+    {
+      name: 'longitudinal',
+      iconName: 'icon-link',
+      iconLabel: 'Compare',
+      label: 'Compare with prior',
+      component: () => (
+        <LongitudinalPanel
+          servicesManager={servicesManager}
+          extensionManager={extensionManager}
+        />
+      ),
     },
   ];
 }
