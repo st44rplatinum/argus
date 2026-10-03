@@ -1,0 +1,242 @@
+[
+  {
+    "case": "s0040",
+    "centre_zyx": [
+      247,
+      185,
+      193
+    ],
+    "radius_mm": 13.1,
+    "contrast_hu": 25.1,
+    "edge": "soft",
+    "seed": 70000
+  },
+  {
+    "case": "s0057",
+    "centre_zyx": [
+      145,
+      128,
+      203
+    ],
+    "radius_mm": 12.13,
+    "contrast_hu": -34.1,
+    "edge": "hard",
+    "seed": 70010
+  },
+  {
+    "case": "s0057",
+    "centre_zyx": [
+      105,
+      133,
+      228
+    ],
+    "radius_mm": 7.98,
+    "contrast_hu": -53.9,
+    "edge": "core",
+    "seed": 70011
+  },
+  {
+    "case": "s0058",
+    "centre_zyx": [
+      225,
+      133,
+      192
+    ],
+    "radius_mm": 11.93,
+    "contrast_hu": -27.7,
+    "edge": "hard",
+    "seed": 70020
+  },
+  {
+    "case": "s0070",
+    "centre_zyx": [
+      54,
+      117,
+      162
+    ],
+    "radius_mm": 5.72,
+    "contrast_hu": -59.5,
+    "edge": "core",
+    "seed": 70030
+  },
+  {
+    "case": "s0102",
+    "centre_zyx": [
+      77,
+      95,
+      221
+    ],
+    "radius_mm": 7.72,
+    "contrast_hu": 24.1,
+    "edge": "soft",
+    "seed": 70040
+  },
+  {
+    "case": "s0102",
+    "centre_zyx": [
+      94,
+      49,
+      235
+    ],
+    "radius_mm": 14.39,
+    "contrast_hu": -30.3,
+    "edge": "hard",
+    "seed": 70041
+  },
+  {
+    "case": "s0045",
+    "centre_zyx": [
+      237,
+      137,
+      162
+    ],
+    "radius_mm": 11.76,
+    "contrast_hu": -22.4,
+    "edge": "hard",
+    "seed": 70060
+  },
+  {
+    "case": "s0072",
+    "centre_zyx": [
+      199,
+      141,
+      205
+    ],
+    "radius_mm": 14.5,
+    "contrast_hu": -43.7,
+    "edge": "core",
+    "seed": 70080
+  },
+  {
+    "case": "s0072",
+    "centre_zyx": [
+      244,
+      178,
+      167
+    ],
+    "radius_mm": 8.28,
+    "contrast_hu": -22.9,
+    "edge": "soft",
+    "seed": 70081
+  },
+  {
+    "case": "s0072",
+    "centre_zyx": [
+      200,
+      165,
+      228
+    ],
+    "radius_mm": 10.84,
+    "contrast_hu": -23.0,
+    "edge": "core",
+    "seed": 70082
+  },
+  {
+    "case": "s0075",
+    "centre_zyx": [
+      238,
+      247,
+      169
+    ],
+    "radius_mm": 8.66,
+    "contrast_hu": -34.3,
+    "edge": "soft",
+    "seed": 70090
+  },
+  {
+    "case": "s0086",
+    "centre_zyx": [
+      217,
+      219,
+      219
+    ],
+    "radius_mm": 9.65,
+    "contrast_hu": -43.0,
+    "edge": "core",
+    "seed": 70110
+  },
+  {
+    "case": "s0086",
+    "centre_zyx": [
+      244,
+      209,
+      180
+    ],
+    "radius_mm": 11.47,
+    "contrast_hu": 22.5,
+    "edge": "soft",
+    "seed": 70111
+  },
+  {
+    "case": "s0086",
+    "centre_zyx": [
+      225,
+      194,
+      180
+    ],
+    "radius_mm": 13.57,
+    "contrast_hu": -47.0,
+    "edge": "soft",
+    "seed": 70112
+  },
+  {
+    "case": "s0089",
+    "centre_zyx": [
+      206,
+      120,
+      161
+    ],
+    "radius_mm": 12.23,
+    "contrast_hu": -52.7,
+    "edge": "hard",
+    "seed": 70120
+  },
+  {
+    "case": "s0090",
+    "centre_zyx": [
+      229,
+      101,
+      185
+    ],
+    "radius_mm": 12.11,
+    "contrast_hu": -49.5,
+    "edge": "hard",
+    "seed": 70130
+  },
+  {
+    "case": "s0106",
+    "centre_zyx": [
+      92,
+      144,
+      104
+    ],
+    "radius_mm": 11.93,
+    "contrast_hu": -42.1,
+    "edge": "hard",
+    "seed": 70140
+  },
+  {
+    "case": "s0109",
+    "centre_zyx": [
+      209,
+      106,
+      224
+    ],
+    "radius_mm": 7.67,
+    "contrast_hu": -46.8,
+    "edge": "hard",
+    "seed": 70160
+  },
+  {
+    "case": "s0119",
+    "centre_zyx": [
+      263,
+      178,
+      180
+    ],
+    "radius_mm": 7.1,
+    "contrast_hu": -15.1,
+    "edge": "core",
+    "seed": 70170
+  }
+]

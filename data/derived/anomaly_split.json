@@ -1,0 +1,84 @@
+{
+  "seed": 7,
+  "phase": "portal_venous",
+  "excluded": [
+    {
+      "case": "s0039",
+      "reason": "liver touches the top or bottom slice"
+    },
+    {
+      "case": "s0052",
+      "reason": "liver touches the top or bottom slice"
+    },
+    {
+      "case": "s0080",
+      "reason": "liver touches the top or bottom slice"
+    },
+    {
+      "case": "s0088",
+      "reason": "liver touches the top or bottom slice"
+    },
+    {
+      "case": "s0105",
+      "reason": "liver touches the top or bottom slice"
+    },
+    {
+      "case": "s0000",
+      "reason": "liver 0 ml, under half the median"
+    }
+  ],
+  "train": [
+    "s0004",
+    "s0010",
+    "s0011",
+    "s0012",
+    "s0013",
+    "s0014",
+    "s0015",
+    "s0028",
+    "s0029",
+    "s0030",
+    "s0042",
+    "s0053",
+    "s0054",
+    "s0059",
+    "s0071",
+    "s0078",
+    "s0082",
+    "s0091",
+    "s0096",
+    "s0108",
+    "s0120"
+  ],
+  "val": [
+    "s0040",
+    "s0057",
+    "s0058",
+    "s0070",
+    "s0102"
+  ],
+  "test": [
+    "s0038",
+    "s0045",
+    "s0050",
+    "s0072",
+    "s0075",
+    "s0077",
+    "s0086",
+    "s0089",
+    "s0090",
+    "s0106",
+    "s0107",
+    "s0109",
+    "s0119"
+  ],
+  "counts": {
+    "candidates": 45,
+    "excluded": 6,
+    "train": 21,
+    "val": 5,
+    "test": 13,
+    "pool_in_test": 0,
+    "pool_cases_usable": 10
+  }
+}
