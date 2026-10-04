@@ -10,6 +10,18 @@ from sklearn.metrics import roc_auc_score
 
 from .anomaly import connected_blobs
 
+# Every method is scored inside the liver minus this rim. The mask's outer
+# voxels are part fat or air, so without it every method mostly flags the
+# edge. No planted lesion is lost: all sit their radius + 2 mm inside.
+RIM_MM = 3.0
+
+
+def scoring_region(liver_mask: np.ndarray, spacing_zyx) -> np.ndarray:
+    """The liver shrunk by RIM_MM. Pass this wherever a liver mask is asked for."""
+    inside = ndimage.distance_transform_edt(liver_mask.astype(bool), sampling=spacing_zyx)
+    return (inside > RIM_MM).astype(np.uint8)
+
+
 @dataclass
 class Lesion:
     mask: np.ndarray
