@@ -17,9 +17,9 @@ for the models.
 - **Anomaly detection** (research): find planted liver lesions three ways and
   compare them honestly.
 
-![Similar cases](screenshots/similar-cases.png)
+![Similar cases](screenshots/viewer-similar.png)
 
-![Compare with prior](screenshots/compare-with-prior.png)
+![Compare with prior](screenshots/viewer-compare.png)
 
 ![Liver atlas](screenshots/liver-atlas.png)
 
@@ -36,7 +36,7 @@ mask it still finds itself first, at 0.96-0.99 against ~0.91 for the next.
 | no registration | 20.1 mm |
 | rigid | 1.19 mm |
 | rigid + B-spline | **1.05 mm** |
-| lesion change measured | **+155%** |
+| lesion change measured | **+151 to +155%** (true +152%) |
 
 **Anomaly detection**, liver, 13 test scans with 13 planted lesions, tuned for
 about 1 false alarm per scan:
