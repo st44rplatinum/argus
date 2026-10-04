@@ -64,6 +64,10 @@ def write_series(
 ) -> tuple[str, int]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # first row at the front, first column at the patient's right, as viewers
+    # expect; a RAS NIfTI stored as-is shows upside down in a stack view
+    image = sitk.DICOMOrient(image, "LPS")
+
     array = sitk.GetArrayFromImage(image).astype(np.float32)
     spacing = image.GetSpacing()
     origin = np.array(image.GetOrigin(), dtype=np.float64)

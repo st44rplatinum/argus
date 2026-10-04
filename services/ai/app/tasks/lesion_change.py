@@ -3,6 +3,34 @@
 from .registration import REGISTRATIONS
 
 
+SNAP_MM = 4.0
+
+
+def _snap(roi, seed):
+    """Move the seed up to SNAP_MM to where the lesion is clearest.
+
+    A point near a lesion's edge reads half liver, and the half-way cut then
+    has nothing to cut between. So step to the voxel that differs most from
+    its surroundings, the same way the seed does (darker or brighter).
+    """
+    import numpy as np
+    import SimpleITK as sitk
+
+    values = sitk.GetArrayFromImage(sitk.DiscreteGaussian(roi, variance=1.0))
+    spacing = np.asarray(roi.GetSpacing())[::-1]
+    x, y, z = seed
+    difference = values - np.median(values)
+    # a seed on plain liver hasn't picked a side yet; then either will do
+    sign = np.sign(difference[z, y, x]) if abs(difference[z, y, x]) >= 5.0 else 0.0
+    score = sign * difference if sign else np.abs(difference)
+
+    zz, yy, xx = np.indices(values.shape)
+    near = (((zz - z) * spacing[0]) ** 2 + ((yy - y) * spacing[1]) ** 2
+            + ((xx - x) * spacing[2]) ** 2) <= SNAP_MM**2
+    best = np.unravel_index(np.argmax(np.where(near, score, -np.inf)), values.shape)
+    return tuple(int(v) for v in best[::-1])
+
+
 def measure_lesion(image, seed_point, radius_mm=20.0):
     """Grow a lesion from a point, within a box around it so it cannot leak far."""
     import numpy as np
@@ -19,7 +47,7 @@ def measure_lesion(image, seed_point, radius_mm=20.0):
     upper = np.minimum(index + radius + 1, size)
 
     roi = sitk.RegionOfInterest(image, [int(v) for v in upper - lower], [int(v) for v in lower])
-    seed = tuple(int(v) for v in index - lower)
+    seed = _snap(roi, tuple(int(v) for v in index - lower))
     values = sitk.GetArrayFromImage(roi)
 
     # Cut halfway between the lesion (around the seed) and what surrounds it

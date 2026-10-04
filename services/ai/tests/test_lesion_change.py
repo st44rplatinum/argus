@@ -33,3 +33,10 @@ def test_air_is_refused():
     image = sitk.GetImageFromArray(np.full((20, 20, 20), -950.0, np.float32))
     with pytest.raises(ValueError, match="air or gas"):
         measure_lesion(image, (10.0, 10.0, 10.0))
+
+
+def test_a_seed_near_the_edge_still_measures_the_whole_lesion():
+    # 7 mm off the centre of a 9 mm lesion: the seed steps inward first
+    image, truth = liver_with_lesion(1.0)
+    measured = measure_lesion(image, (27.0, 20.0, 20.0))
+    assert measured["volume_mm3"] == pytest.approx(truth, rel=0.08)
