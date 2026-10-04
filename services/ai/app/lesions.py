@@ -127,7 +127,8 @@ def planted(case: str, recipes: list[LesionRecipe]):
     """A case with its lesions, cropped to the liver plus a margin.
 
     Returns (image, liver mask) as sitk images with the right spacing, and the
-    lesion mask as a [z, y, x] array on the same crop.
+    lesion mask as a [z, y, x] array on the same crop. The images' origin is
+    the crop's corner in the full scan, so recipe centres can be found in it.
     """
     image, liver, spacing = load_case(case)
 
@@ -147,6 +148,8 @@ def planted(case: str, recipes: list[LesionRecipe]):
     def to_sitk(array):
         out = sitk.GetImageFromArray(array)
         out.SetSpacing(spacing[::-1])
+        # origin = where the crop starts in the full scan, in mm
+        out.SetOrigin(tuple(float(v) for v in (lo * np.asarray(spacing))[::-1]))
         return out
 
     return to_sitk(image), to_sitk(liver.astype(np.uint8)), lesions
