@@ -34,3 +34,6 @@ timm>=1.0
 
 # tests
 pytest>=8
+
+# only to export the encoder (scripts/export_dinov2_onnx.py)
+# pip install onnx onnxscript

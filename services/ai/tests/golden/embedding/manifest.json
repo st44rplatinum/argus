@@ -1,0 +1,20 @@
+{
+  "encoder_id": "vit_small_patch14_dinov2.lvd142m",
+  "preprocess_version": 1,
+  "axis_order": "x, y, z",
+  "spacing": [
+    1.5,
+    1.5,
+    2.0
+  ],
+  "onnx_sha256": "dcc333216de485f6b187816a8bffe714328b4071dc933c0ef5cb3052f4e28a7c",
+  "stages": {
+    "ct.npy": "1. input CT, int16 HU",
+    "mask.npy": "1. input mask",
+    "slices.npy": "2. selected z indices",
+    "cropped.npy": "3. each slice windowed, cropped, rotated, before resizing",
+    "resized.npy": "4. first two slices after resizing to 224x224",
+    "weights.npy": "5. each slice's 256 patch weights",
+    "embedding.npy": "6. the 384-d embedding"
+  }
+}

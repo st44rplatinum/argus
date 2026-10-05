@@ -6,6 +6,8 @@ slices. Nothing is trained here.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
 ENCODER_ID = "vit_small_patch14_dinov2.lvd142m"
@@ -18,7 +20,15 @@ FOV_MM = 240.0                   # fixed field of view, keeps organ size visible
 WINDOW = (-160.0, 240.0)         # soft tissue
 SLICES = 8
 
+# DINOv2's training normalisation (ImageNet); test_onnx_parity checks it
+# against the model's own config
+MEAN = (0.485, 0.456, 0.406)
+STD = (0.229, 0.224, 0.225)
+
+ONNX_PATH = Path(__file__).resolve().parents[3] / "weights" / "dinov2s_224.onnx"
+
 _model = None
+_session = None
 
 
 def load_model(threads: int = 4):
@@ -91,35 +101,55 @@ def _prepare(ct: np.ndarray, mask: np.ndarray, spacing: tuple[float, float, floa
     return images, weights
 
 
-def organ_embedding(ct: np.ndarray, mask: np.ndarray, spacing, threads: int = 4):
-    """384-d unit vector for one organ, or None if it is absent.
-
-    ct and mask are [x, y, z] in canonical orientation, spacing in mm.
-    """
+def resize(images) -> np.ndarray:
+    """Each prepared slice to 224x224, bilinear, as the network wants."""
     import torch
     import torch.nn.functional as F
 
-    if mask.sum() < 100:
-        return None
+    out = [
+        F.interpolate(torch.from_numpy(np.ascontiguousarray(image))[None, None],
+                      size=(IMAGE_SIZE, IMAGE_SIZE), mode="bilinear", align_corners=False)[0, 0].numpy()
+        for image in images
+    ]
+    return np.stack(out).astype(np.float32)
 
-    images, weights = _prepare(ct, mask.astype(bool), spacing)
-    if not images:
-        return None
+
+def network_input(resized: np.ndarray) -> np.ndarray:
+    """Grey to three channels, normalised the way DINOv2 was trained: (N, 3, 224, 224)."""
+    x = np.repeat(resized[:, None], 3, axis=1)
+    return ((x - np.array(MEAN, np.float32)[None, :, None, None])
+            / np.array(STD, np.float32)[None, :, None, None]).astype(np.float32)
+
+
+def patch_tokens(x: np.ndarray, backend: str = "torch", threads: int = 4) -> np.ndarray:
+    """The network: (N, 3, 224, 224) in, (N, 256, 384) patch tokens out.
+
+    "onnx" runs the exported file (scripts/export_dinov2_onnx.py) with ONNX
+    Runtime and needs no torch; "torch" runs the timm model.
+    """
+    if backend == "onnx":
+        return _onnx_session(threads).run(None, {"images": x})[0]
+
+    import torch
 
     model = load_model(threads)
-    mean = torch.tensor(model.pretrained_cfg["mean"]).view(1, 3, 1, 1)
-    std = torch.tensor(model.pretrained_cfg["std"]).view(1, 3, 1, 1)
-
-    batch = []
-    for image in images:
-        t = torch.from_numpy(np.ascontiguousarray(image))[None, None]
-        t = F.interpolate(t, size=(IMAGE_SIZE, IMAGE_SIZE), mode="bilinear", align_corners=False)
-        batch.append(t.repeat(1, 3, 1, 1))
-    x = (torch.cat(batch) - mean) / std
-
     with torch.no_grad():
-        tokens = model.forward_features(x)[:, model.num_prefix_tokens :, :].numpy()
+        return model.forward_features(torch.from_numpy(x))[:, model.num_prefix_tokens :, :].numpy()
 
+
+def _onnx_session(threads: int):
+    global _session
+    if _session is None:
+        import onnxruntime as ort
+
+        options = ort.SessionOptions()
+        options.intra_op_num_threads = threads
+        _session = ort.InferenceSession(str(ONNX_PATH), options, providers=["CPUExecutionProvider"])
+    return _session
+
+
+def pool(tokens: np.ndarray, weights) -> np.ndarray | None:
+    """Average the organ's patches per slice, then the slices; unit length."""
     per_slice = []
     for patches, w in zip(tokens, weights):
         # mostly-organ patches if there are any, otherwise whatever touches it
@@ -132,6 +162,34 @@ def organ_embedding(ct: np.ndarray, mask: np.ndarray, spacing, threads: int = 4)
 
     if not per_slice:
         return None
-
     vector = np.mean(per_slice, axis=0)
     return vector / np.linalg.norm(vector)
+
+
+def stages(ct: np.ndarray, mask: np.ndarray, spacing, backend: str = "torch", threads: int = 4) -> dict:
+    """Every step of the embedding, so golden files can pin each one."""
+    mask = mask.astype(bool)
+    slices = select_slices(mask)
+    images, weights = _prepare(ct, mask, spacing)
+    if not images:
+        return {"slices": slices, "cropped": [], "resized": None, "weights": [], "embedding": None}
+
+    resized = resize(images)
+    tokens = patch_tokens(network_input(resized), backend, threads)
+    return {
+        "slices": slices,
+        "cropped": images,
+        "resized": resized,
+        "weights": weights,
+        "embedding": pool(tokens, weights),
+    }
+
+
+def organ_embedding(ct: np.ndarray, mask: np.ndarray, spacing, threads: int = 4, backend: str = "torch"):
+    """384-d unit vector for one organ, or None if it is absent.
+
+    ct and mask are [x, y, z] in canonical orientation, spacing in mm.
+    """
+    if mask.sum() < 100:
+        return None
+    return stages(ct, mask, spacing, backend, threads)["embedding"]
