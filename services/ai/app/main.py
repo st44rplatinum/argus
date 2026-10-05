@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from . import db, jobs, worker
-from .cache import make_cache_key
+from .cache import code_version, make_cache_key
 from .config import (
     ARGUS_DEVICE,
     ARGUS_THREADS,
@@ -145,12 +145,16 @@ def segment(request: SegmentRequest):
     return result
 
 
+# a change to the model or to any service code starts the cache afresh
+CACHE_VERSION = f"{MODEL_VERSION}+{code_version()}"
+
+
 def registration_key(series_uid: str, prior_series_uid: str) -> str:
     """Cache key of a register job, also where its transform is saved."""
     return make_cache_key(
         series_uid,
         "register",
-        MODEL_VERSION,
+        CACHE_VERSION,
         {"prior_series_uid": prior_series_uid},
     )
 
@@ -188,7 +192,7 @@ def create_job(request: SegmentRequest):
     cache_key = make_cache_key(
         request.series_uid,
         request.model,
-        MODEL_VERSION,
+        CACHE_VERSION,
         parameters,
     )
 
