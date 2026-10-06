@@ -5,7 +5,7 @@ import LongitudinalPanel from './panels/LongitudinalPanel';
 import SeriesInfoPanel from './panels/SeriesInfoPanel';
 import SimilarPanel from './panels/SimilarPanel';
 
-export default function getPanelModule({ servicesManager, extensionManager }: withAppTypes) {
+export default function getPanelModule({ servicesManager, extensionManager, commandsManager }: withAppTypes) {
   return [
     {
       name: 'seriesInfo',
@@ -37,6 +37,7 @@ export default function getPanelModule({ servicesManager, extensionManager }: wi
         <LongitudinalPanel
           servicesManager={servicesManager}
           extensionManager={extensionManager}
+          commandsManager={commandsManager}
         />
       ),
     },

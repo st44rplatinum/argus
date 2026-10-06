@@ -99,7 +99,6 @@ Tests:
 - Follow-ups and anomaly lesions are synthetic; no real longitudinal pairs yet.
 - Anomaly detection covers the liver, portal venous phase only.
 - Everything runs on CPU here; TotalSegmentator takes ~2 minutes a scan.
-- A registered prior needs a reload and a manual 1x2 layout to show.
 - Interactive segmentation waits on a GPU with ~10 GB.
 - Orthanc has auth and CORS off and is bound to localhost only. Unbind it and
   auth goes back on in the same change.

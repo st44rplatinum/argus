@@ -17,8 +17,9 @@ const prettyDate = (d: string) => (d?.length === 8 ? `${d.slice(0, 4)}-${d.slice
 const ml = (mm3: number) => `${(mm3 / 1000).toFixed(2)} ml`;
 const percent = (p: number | null) => (p === null ? '–' : `${p > 0 ? '+' : ''}${p.toFixed(0)}%`);
 
-export default function LongitudinalPanel({ servicesManager, extensionManager }: withAppTypes) {
-  const { viewportGridService, displaySetService, measurementService } = servicesManager.services;
+export default function LongitudinalPanel({ servicesManager, extensionManager, commandsManager }: withAppTypes) {
+  const { viewportGridService, displaySetService, measurementService, cornerstoneViewportService, syncGroupService } =
+    servicesManager.services;
 
   const [current, setCurrent] = useState<Current | null>(null);
   const [priors, setPriors] = useState<Prior[]>([]);
@@ -138,6 +139,60 @@ export default function LongitudinalPanel({ servicesManager, extensionManager }:
   });
 
   const registered = register.job?.status === 'done' ? (register.job.result as RegisterResult) : null;
+
+  const findSeries = (uid: string) =>
+    displaySetService.getActiveDisplaySets().find(ds => ds.SeriesInstanceUID === uid);
+
+  // This series and the registered prior in a 1x2, scrolling together.
+  const showSideBySide = async () => {
+    setMessage(null);
+    try {
+      const uid = registered.registered_series_uid;
+      if (!findSeries(uid)) {
+        // The new series isn't loaded yet. OHIF caches a study's metadata
+        // under "<source name>:<study uid>", and its own clear function is
+        // handed the bare uid, so pass the full key to actually clear it.
+        const [dataSource] = extensionManager.getActiveDataSource();
+        dataSource.deleteStudyMetadataPromise(`${dataSource.getConfig().name}:${current.studyUid}`);
+        await dataSource.retrieve.series.metadata({
+          StudyInstanceUID: current.studyUid,
+          filters: { seriesInstanceUID: [uid] },
+        });
+        for (let i = 0; i < 50 && !findSeries(uid); i++) {
+          await new Promise(r => setTimeout(r, 100));
+        }
+      }
+
+      const now = findSeries(current.seriesUid);
+      const then = findSeries(uid);
+      if (!now || !then) {
+        throw new Error('could not load the registered series; reload the study');
+      }
+
+      commandsManager.runCommand('setViewportGridLayout', { numRows: 1, numCols: 2 });
+      await new Promise(r => setTimeout(r, 300));
+      const [left, right] = [...viewportGridService.getState().viewports.keys()];
+      viewportGridService.setDisplaySetsForViewports([
+        { viewportId: left, displaySetInstanceUIDs: [now.displaySetInstanceUID] },
+        { viewportId: right, displaySetInstanceUIDs: [then.displaySetInstanceUID] },
+      ]);
+      // OHIF's sync skips viewports that aren't drawn yet, so wait for both
+      const ready = (id: string, series: string) =>
+        cornerstoneViewportService.getCornerstoneViewport(id)?.getCurrentImageId?.()?.includes(series);
+      for (let i = 0; i < 50 && !(ready(left, now.SeriesInstanceUID) && ready(right, uid)); i++) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+
+      // same grid and frame of reference, so slice sync lines them up exactly;
+      // the command toggles, so only call it when sync is off
+      const synced = syncGroupService.getSynchronizersForViewport(left).some(s => s.id === 'IMAGE_SLICE_SYNC');
+      if (!synced) {
+        commandsManager.runCommand('toggleSynchronizer', { type: 'imageSlice' });
+      }
+    } catch (exc) {
+      setMessage(String(exc));
+    }
+  };
   const change = lesion.job?.status === 'done' ? (lesion.job.result as LesionChange) : null;
 
   if (!current) {
@@ -184,9 +239,17 @@ export default function LongitudinalPanel({ servicesManager, extensionManager }:
       {registered ? (
         <p className="text-muted-foreground mt-2">
           Stored as “Prior {prior ? prettyDate(prior.date) : ''}, registered”
-          {register.job?.cached ? ' (cached)' : ` in ${registered.seconds.toFixed(0)} s`}. Reload,
-          put it beside this series, and turn on Image Slice Sync under More tools.
+          {register.job?.cached ? ' (cached)' : ` in ${registered.seconds.toFixed(0)} s`}.
         </p>
+      ) : null}
+
+      {registered ? (
+        <button
+          className="border-primary text-primary mt-2 w-full rounded border px-3 py-1.5 font-medium"
+          onClick={showSideBySide}
+        >
+          Show side by side
+        </button>
       ) : null}
 
       <div className="border-border mt-4 border-t pt-3">
