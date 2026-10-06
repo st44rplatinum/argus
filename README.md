@@ -102,3 +102,12 @@ Tests:
 - Interactive segmentation waits on a GPU with ~10 GB.
 - Orthanc has auth and CORS off and is bound to localhost only. Unbind it and
   auth goes back on in the same change.
+
+## Credits
+
+- CT data: the TotalSegmentator dataset, v2.0.1, CC BY 4.0. Wasserthal et al.,
+  [Radiology: AI 2023](https://doi.org/10.1148/ryai.230024). The feature index, phase labels, pool,
+  planted-lesion recipes and screenshots are derived from it.
+- Segmentation and contrast phase: [TotalSegmentator](https://github.com/wasserth/TotalSegmentator).
+- Image features: [DINOv2](https://github.com/facebookresearch/dinov2) via timm.
+- Viewer: [OHIF](https://github.com/OHIF/Viewers) and Cornerstone3D. PACS: [Orthanc](https://www.orthanc-server.com/).
