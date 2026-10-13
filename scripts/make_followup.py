@@ -61,12 +61,13 @@ def add_lesion(image: sitk.Image, liver: np.ndarray, centre_zyx, radius_mm: floa
     return out, lesion
 
 
-def motion(image: sitk.Image, rigid_only: bool, seed: int) -> sitk.Transform:
+def motion(image: sitk.Image, rigid_only: bool, seed: int,
+           degrees=(1.5, -2.0, 2.0), shift_mm=(14.0, -11.0, 7.0)) -> sitk.Transform:
     """Current point -> prior point: a gentle warp, then a rigid move."""
     rigid = sitk.Euler3DTransform()
     rigid.SetCenter(image.TransformContinuousIndexToPhysicalPoint([s / 2.0 for s in image.GetSize()]))
-    rigid.SetRotation(math.radians(1.5), math.radians(-2.0), math.radians(2.0))
-    rigid.SetTranslation((14.0, -11.0, 7.0))
+    rigid.SetRotation(*(math.radians(d) for d in degrees))
+    rigid.SetTranslation(tuple(float(v) for v in shift_mm))
     if rigid_only:
         return rigid
 
