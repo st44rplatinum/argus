@@ -76,7 +76,13 @@ export type RegisterResult = {
   seconds: number;
 };
 
-export type LesionSize = { volume_mm3: number; diameter_mm: number };
+export type LesionSize = {
+  volume_mm3: number;
+  diameter_mm: number;
+  // RECIST: longest line on one axial slice, and the widest extent across it
+  long_axis_mm?: number;
+  short_axis_mm?: number;
+};
 
 export type LesionChange = {
   point_current: number[];

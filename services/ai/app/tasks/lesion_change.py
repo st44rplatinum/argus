@@ -36,6 +36,8 @@ def measure_lesion(image, seed_point, radius_mm=20.0):
     import numpy as np
     import SimpleITK as sitk
 
+    from ..recist import axial_axes
+
     index = np.asarray(image.TransformPhysicalPointToIndex(tuple(map(float, seed_point))))
     size = np.asarray(image.GetSize())
     if np.any(index < 0) or np.any(index >= size):
@@ -69,17 +71,15 @@ def measure_lesion(image, seed_point, radius_mm=20.0):
 
     # sitk arrays are [z, y, x]
     mask = sitk.GetArrayFromImage(grown) > 0
-    zs, ys, xs = np.nonzero(mask)
-    volume_mm3 = float(mask.sum() * np.prod(spacing))
+    axes = axial_axes(mask, spacing[::-1])
 
-    diameter = 0.0
-    for z in np.unique(zs):
-        points = np.column_stack([xs[zs == z] * spacing[0], ys[zs == z] * spacing[1]])
-        if len(points) > 1:
-            gaps = points[:, None, :] - points[None, :, :]
-            diameter = max(diameter, float(np.sqrt((gaps**2).sum(-1)).max()))
-
-    return {"volume_mm3": volume_mm3, "diameter_mm": diameter}
+    return {
+        "volume_mm3": float(mask.sum() * np.prod(spacing)),
+        "long_axis_mm": axes["long_mm"],
+        "short_axis_mm": axes["short_mm"],
+        # kept for older results and the panel's first column
+        "diameter_mm": axes["long_mm"],
+    }
 
 
 def _change(before, after):

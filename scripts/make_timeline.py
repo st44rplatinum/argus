@@ -5,8 +5,9 @@ Every scan after the first is moved and warped differently. The answer key,
 data/derived/timeline_<case>.json, has each lesion's true place and size at
 each date, and landmarks located in every scan.
 
-  python scripts/make_timeline.py --dry-run   # build and check, push nothing
+  python scripts/make_timeline.py --dry-run      # build and check, push nothing
   python scripts/make_timeline.py
+  python scripts/make_timeline.py --update-key   # refresh the key, keep the pushed scans
 """
 
 from __future__ import annotations
@@ -23,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "services" / "ai"))
 
 from app.lesions import _choose_centre  # noqa: E402
+from app.recist import axial_axes  # noqa: E402
 from make_followup import DATASET, DERIVED, add_lesion, centroid, motion, push_series  # noqa: E402
 from nifti_to_dicom import read_nifti  # noqa: E402
 
@@ -63,7 +65,14 @@ def main() -> None:
     parser.add_argument("--case", default="s0012")
     parser.add_argument("--seed", type=int, default=21)
     parser.add_argument("--dry-run", action="store_true", help="build and check, push nothing")
+    parser.add_argument("--update-key", action="store_true", help="rewrite the answer key without pushing again")
     args = parser.parse_args()
+
+    path = DERIVED / f"timeline_{args.case}.json"
+    pushed = {}
+    if args.update_key:
+        # the scans are rebuilt identically, so their uids still apply
+        pushed = {t["date"]: t for t in json.loads(path.read_text(encoding="utf-8"))["timepoints"]}
 
     patient_id = f"TL-{args.case}"
     original = read_nifti(DATASET / args.case / "ct.nii.gz")
@@ -103,10 +112,13 @@ def main() -> None:
             mask = sitk.GetImageFromArray(masks[name].astype(np.uint8))
             mask.CopyInformation(original)
             moved = sitk.GetArrayFromImage(sitk.Resample(mask, original, transform, sitk.sitkNearestNeighbor, 0)) > 0
+            axes = axial_axes(moved, spacing_zyx)
             lesions.append({
                 "id": name,
                 "radius_mm": radii[t],
                 "volume_ml": round(float(moved.sum() * voxel_ml), 3),
+                "long_axis_mm": round(axes["long_mm"], 2),
+                "short_axis_mm": round(axes["short_mm"], 2),
                 "centre": centroid(original, moved),
             })
 
@@ -114,10 +126,13 @@ def main() -> None:
             track.append(find_in_scan(transform, mark))
 
         entry = {"date": date, "lesions": lesions}
-        if not args.dry_run:
+        if args.update_key:
+            entry.update({k: pushed[date][k] for k in ("study_uid", "series_uid")})
+        elif not args.dry_run:
             entry.update(push_series(image, work / date, f"Timeline {args.case}", patient_id, date))
         timepoints.append(entry)
-        print(f"{date}  " + "  ".join(f"{l['id']} {l['volume_ml']:.2f} ml" for l in lesions), flush=True)
+        print(f"{date}  " + "  ".join(
+            f"{l['id']} {l['long_axis_mm']:.1f} x {l['short_axis_mm']:.1f} mm" for l in lesions), flush=True)
 
     # keep landmarks that stay inside every scan; near the edge the warp is undefined
     size = np.array(original.GetSize())
@@ -153,7 +168,6 @@ def main() -> None:
         # each landmark is one place in the body, given in every scan in date order
         "landmarks": landmark_tracks,
     }
-    path = DERIVED / f"timeline_{args.case}.json"
     path.write_text(json.dumps(answer, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {path.relative_to(ROOT)}")
 

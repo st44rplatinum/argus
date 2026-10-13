@@ -30,6 +30,8 @@
           "id": "growing",
           "radius_mm": 6.0,
           "volume_ml": 0.861,
+          "long_axis_mm": 13.5,
+          "short_axis_mm": 10.5,
           "centre": [
             13.419242144082773,
             -216.81849811674311,
@@ -40,6 +42,8 @@
           "id": "stable",
           "radius_mm": 7.0,
           "volume_ml": 1.475,
+          "long_axis_mm": 14.92,
+          "short_axis_mm": 14.92,
           "centre": [
             -30.55849633297197,
             -184.5447165032211,
@@ -50,6 +54,8 @@
           "id": "shrinking",
           "radius_mm": 10.0,
           "volume_ml": 4.175,
+          "long_axis_mm": 20.71,
+          "short_axis_mm": 20.71,
           "centre": [
             -85.08992601899308,
             -96.53820130234257,
@@ -67,6 +73,8 @@
           "id": "growing",
           "radius_mm": 8.0,
           "volume_ml": 2.089,
+          "long_axis_mm": 16.8,
+          "short_axis_mm": 16.8,
           "centre": [
             0.2558918382389379,
             -204.57871921927128,
@@ -77,6 +85,8 @@
           "id": "stable",
           "radius_mm": 7.0,
           "volume_ml": 1.431,
+          "long_axis_mm": 15.65,
+          "short_axis_mm": 13.58,
           "centre": [
             -40.37688936253744,
             -167.94195094391873,
@@ -87,6 +97,8 @@
           "id": "shrinking",
           "radius_mm": 8.0,
           "volume_ml": 2.001,
+          "long_axis_mm": 17.16,
+          "short_axis_mm": 15.87,
           "centre": [
             -95.13803374837164,
             -77.93395883260078,
@@ -104,6 +116,8 @@
           "id": "growing",
           "radius_mm": 10.0,
           "volume_ml": 4.286,
+          "long_axis_mm": 21.9,
+          "short_axis_mm": 20.03,
           "centre": [
             23.632701342114217,
             -234.51018318593188,
@@ -114,6 +128,8 @@
           "id": "stable",
           "radius_mm": 7.0,
           "volume_ml": 1.583,
+          "long_axis_mm": 16.27,
+          "short_axis_mm": 14.9,
           "centre": [
             -22.338085040737155,
             -204.0045406447645,
@@ -124,6 +140,8 @@
           "id": "shrinking",
           "radius_mm": 6.0,
           "volume_ml": 0.877,
+          "long_axis_mm": 15.08,
+          "short_axis_mm": 11.11,
           "centre": [
             -77.51950319258702,
             -116.0585290940101,
@@ -141,6 +159,8 @@
           "id": "growing",
           "radius_mm": 12.0,
           "volume_ml": 6.882,
+          "long_axis_mm": 24.93,
+          "short_axis_mm": 24.16,
           "centre": [
             -1.5560358009575168,
             -220.98378358314775,
@@ -151,6 +171,8 @@
           "id": "stable",
           "radius_mm": 7.0,
           "volume_ml": 1.414,
+          "long_axis_mm": 14.92,
+          "short_axis_mm": 14.25,
           "centre": [
             -45.543947363791574,
             -187.46828500228258,
@@ -161,6 +183,8 @@
           "id": "shrinking",
           "radius_mm": 5.0,
           "volume_ml": 0.54,
+          "long_axis_mm": 11.56,
+          "short_axis_mm": 9.55,
           "centre": [
             -95.97100788009982,
             -97.79852548640092,

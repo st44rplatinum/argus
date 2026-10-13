@@ -15,6 +15,11 @@ type Prior = { studyUid: string; seriesUid: string; date: string; description: s
 
 const prettyDate = (d: string) => (d?.length === 8 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}` : d);
 const ml = (mm3: number) => `${(mm3 / 1000).toFixed(2)} ml`;
+// long x short axis; older results only have the one diameter
+const axes = (size: { diameter_mm: number; long_axis_mm?: number; short_axis_mm?: number }) =>
+  size.short_axis_mm
+    ? `${(size.long_axis_mm ?? size.diameter_mm).toFixed(1)} × ${size.short_axis_mm.toFixed(1)} mm`
+    : `${size.diameter_mm.toFixed(1)} mm`;
 const percent = (p: number | null) => (p === null ? '–' : `${p > 0 ? '+' : ''}${p.toFixed(0)}%`);
 
 export default function LongitudinalPanel({ servicesManager, extensionManager, commandsManager }: withAppTypes) {
@@ -276,19 +281,19 @@ export default function LongitudinalPanel({ servicesManager, extensionManager, c
               <tr>
                 <th className="text-left font-normal"></th>
                 <th className="text-right font-normal">volume</th>
-                <th className="text-right font-normal">diameter</th>
+                <th className="text-right font-normal">long × short</th>
               </tr>
             </thead>
             <tbody className="font-mono">
               <tr>
                 <td className="font-sans">prior</td>
                 <td className="text-right">{ml(change.prior.volume_mm3)}</td>
-                <td className="text-right">{change.prior.diameter_mm.toFixed(1)} mm</td>
+                <td className="text-right">{axes(change.prior)}</td>
               </tr>
               <tr>
                 <td className="font-sans">now</td>
                 <td className="text-right">{ml(change.current.volume_mm3)}</td>
-                <td className="text-right">{change.current.diameter_mm.toFixed(1)} mm</td>
+                <td className="text-right">{axes(change.current)}</td>
               </tr>
               <tr className="font-medium">
                 <td className="font-sans">change</td>
