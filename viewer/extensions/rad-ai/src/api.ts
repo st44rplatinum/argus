@@ -72,7 +72,6 @@ export type SimilarMatch = {
 
 export type RegisterResult = {
   registered_series_uid: string;
-  rigid_parameters: number[];
   seconds: number;
 };
 

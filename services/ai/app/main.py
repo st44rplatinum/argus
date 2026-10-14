@@ -88,6 +88,11 @@ class SegmentRequest(BaseModel):
     # lesion change
     point: list[float] | None = None
 
+    # track: one point per lesion, and every earlier scan to follow them through
+    points: list[list[float]] | None = None
+    priors: list[dict] | None = None
+    study_date: str | None = None
+
 @app.get("/health")
 def health():
     return {
@@ -184,6 +189,17 @@ def create_job(request: SegmentRequest):
             if request.point is None or len(request.point) != 3:
                 raise HTTPException(422, "lesion_change needs a 3D point")
             parameters["point"] = [round(v, 2) for v in request.point]
+    elif request.model == "track":
+        if not request.points or not request.priors:
+            raise HTTPException(422, "track needs points and priors")
+        if any(len(p) != 3 for p in request.points):
+            raise HTTPException(422, "each point is x, y, z")
+        if any(not {"study_uid", "series_uid", "date"} <= set(p) for p in request.priors):
+            raise HTTPException(422, "each prior needs study_uid, series_uid and date")
+        parameters = {
+            "priors": sorted(p["series_uid"] for p in request.priors),
+            "points": [[round(v, 2) for v in p] for p in request.points],
+        }
     elif request.model == "totalsegmentator":
         parameters["fast"] = request.fast
     else:
@@ -203,6 +219,10 @@ def create_job(request: SegmentRequest):
     payload = request.model_dump()
     payload["cache_key"] = cache_key
     payload["dicomweb_url"] = DICOMWEB_URL
+    if request.model == "track":
+        # each pair of scans is registered once and shared with the other jobs
+        for prior in payload["priors"]:
+            prior["registration_key"] = registration_key(request.series_uid, prior["series_uid"])
     if request.model == "lesion_change":
         payload["registration_key"] = registration_key(
             request.series_uid, request.prior_series_uid

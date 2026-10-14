@@ -6,12 +6,14 @@ from .registration import REGISTRATIONS
 SNAP_MM = 4.0
 
 
-def _snap(roi, seed):
+def _snap(roi, seed, direction=0.0):
     """Move the seed up to SNAP_MM to where the lesion is clearest.
 
     A point near a lesion's edge reads half liver, and the half-way cut then
     has nothing to cut between. So step to the voxel that differs most from
     its surroundings, the same way the seed does (darker or brighter).
+    `direction` (-1 darker, +1 brighter) says which way to look when the
+    lesion's kind is already known from another scan.
     """
     import numpy as np
     import SimpleITK as sitk
@@ -21,7 +23,7 @@ def _snap(roi, seed):
     x, y, z = seed
     difference = values - np.median(values)
     # a seed on plain liver hasn't picked a side yet; then either will do
-    sign = np.sign(difference[z, y, x]) if abs(difference[z, y, x]) >= 5.0 else 0.0
+    sign = direction or (np.sign(difference[z, y, x]) if abs(difference[z, y, x]) >= 5.0 else 0.0)
     score = sign * difference if sign else np.abs(difference)
 
     zz, yy, xx = np.indices(values.shape)
@@ -31,8 +33,22 @@ def _snap(roi, seed):
     return tuple(int(v) for v in best[::-1])
 
 
-def measure_lesion(image, seed_point, radius_mm=20.0):
-    """Grow a lesion from a point, within a box around it so it cannot leak far."""
+class NotSeen(ValueError):
+    """No lesion like the one being tracked at this point."""
+
+
+# an earlier scan's lesion must be this much of the current one's contrast:
+# plain liver is weaker, fat or air next to the liver is stronger
+SAME_LESION = (0.4, 2.5)
+
+
+def measure_lesion(image, seed_point, radius_mm=20.0, like=None):
+    """Grow a lesion from a point, within a box around it so it cannot leak far.
+
+    `like` is the contrast (HU against its surroundings) the same lesion has
+    in another scan. With it, only a lesion of that kind counts here, and
+    NotSeen is raised when there isn't one, as for a lesion that is new.
+    """
     import numpy as np
     import SimpleITK as sitk
 
@@ -49,7 +65,7 @@ def measure_lesion(image, seed_point, radius_mm=20.0):
     upper = np.minimum(index + radius + 1, size)
 
     roi = sitk.RegionOfInterest(image, [int(v) for v in upper - lower], [int(v) for v in lower])
-    seed = _snap(roi, tuple(int(v) for v in index - lower))
+    seed = _snap(roi, tuple(int(v) for v in index - lower), float(np.sign(like)) if like else 0.0)
     values = sitk.GetArrayFromImage(roi)
 
     # Cut halfway between the lesion (around the seed) and what surrounds it
@@ -63,6 +79,12 @@ def measure_lesion(image, seed_point, radius_mm=20.0):
         raise ValueError(f"that point is air or gas ({inside:.0f} HU), place the Probe on the lesion")
 
     around = float(np.median(values))
+    contrast = inside - around
+    if like:
+        ratio = contrast / like  # negative when it goes the other way
+        if not SAME_LESION[0] <= ratio <= SAME_LESION[1]:
+            raise NotSeen(f"no matching lesion here ({contrast:+.0f} HU against {like:+.0f} HU now)")
+
     half = (inside + around) / 2.0
     span = abs(around - inside)
     lower_hu, upper_hu = (inside - span, half) if inside < around else (half, inside + span)
@@ -77,6 +99,7 @@ def measure_lesion(image, seed_point, radius_mm=20.0):
         "volume_mm3": float(mask.sum() * np.prod(spacing)),
         "long_axis_mm": axes["long_mm"],
         "short_axis_mm": axes["short_mm"],
+        "contrast_hu": contrast,
         # kept for older results and the panel's first column
         "diameter_mm": axes["long_mm"],
     }

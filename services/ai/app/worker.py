@@ -24,6 +24,7 @@ TASKS = {
     "similar": "similar_cases",
     "register": "registration",
     "lesion_change": "lesion_change",
+    "track": "track",
 }
 
 _worker_thread = None
