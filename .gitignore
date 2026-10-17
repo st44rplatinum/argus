@@ -50,3 +50,6 @@ data/raw/download.log
 
 # Guides and the roadmap stay local
 docs/
+
+# local Claude Code settings
+.claude/
